@@ -1,0 +1,25 @@
+modLoader="javafml" #mandatory
+loaderVersion="${loader_version_range}" #mandatory
+license="${mod_license}"
+[[mods]] #mandatory
+modId="polars_mad_tweaks" #mandatory
+version="${mod_version}" #mandatory
+displayName="${mod_name}" #mandatory
+#updateJSONURL="https://change.me.example.invalid/updates.json" #optional
+#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+logoFile="mad_tweaks.png" #optional
+#credits="" #optional
+authors="${mod_authors}" #optional
+description='''${mod_description}'''
+[[dependencies.polars_mad_tweaks]] #optional
+    modId="forge" #mandatory
+    mandatory=true #mandatory
+    versionRange="${neo_version_range}" #mandatory
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.polars_mad_tweaks]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"

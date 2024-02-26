@@ -1,0 +1,84 @@
+{
+  "magma_cube_ambient": {
+    "sounds": [
+      {
+        "name": "polars_mad_tweaks:magma_cube/idle1"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/idle2"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/idle3"
+      }
+    ],
+    "subtitle": "subtitles.magma_cube.squish"
+  },
+  "magma_cube_hurt": {
+    "sounds": [
+      {
+        "name": "polars_mad_tweaks:magma_cube/hurt1"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/hurt2"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/hurt3"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/hurt4"
+      }
+    ],
+    "subtitle": "subtitles.magma_cube.hurt"
+  },
+  "magma_cube_jump": {
+    "sounds": [
+      {
+        "name": "polars_mad_tweaks:magma_cube/jump1"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/jump2"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/jump3"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/jump4"
+      }
+    ],
+    "subtitle": "subtitles.magma_cube.squish"
+  },
+  "magma_cube_land": {
+    "sounds": [
+      {
+        "name": "polars_mad_tweaks:magma_cube/land1"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/land2"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/land3"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/land4"
+      }
+    ],
+    "subtitle": "subtitles.magma_cube.squish"
+  },
+  "magma_cube_death": {
+    "sounds": [
+      {
+        "name": "polars_mad_tweaks:magma_cube/death1"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/death2"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/death3"
+      },
+      {
+        "name": "polars_mad_tweaks:magma_cube/death4"
+      }
+    ],
+    "subtitle": "subtitles.magma_cube.death"
+  }
+}

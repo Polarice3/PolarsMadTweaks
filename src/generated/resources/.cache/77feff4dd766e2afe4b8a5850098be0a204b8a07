@@ -1,0 +1,5 @@
+// 1.20.1	2024-02-26T20:04:44.4034012	Tags for minecraft:entity_type mod id polars_mad_tweaks
+e9e88c6d773718171301c6c90c1e42259212561d data/minecraft/tags/entity_types/fall_damage_immune.json
+e9e88c6d773718171301c6c90c1e42259212561d data/minecraft/tags/entity_types/freeze_hurts_extra_types.json
+e9e88c6d773718171301c6c90c1e42259212561d data/minecraft/tags/entity_types/frog_food.json
+293cfaac2ea2c3b747140a2fa5143dcb5501e77c data/minecraft/tags/entity_types/powder_snow_walkable_mobs.json
