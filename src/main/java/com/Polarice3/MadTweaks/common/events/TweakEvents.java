@@ -175,7 +175,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.LivingMobHeal.get()){
                 if (!mob.level.isClientSide) {
-                    if (mob.getTarget() == null && MobUtils.isHurt(mob)
+                    if (mob.getTarget() == null && MobUtils.isHurt(mob) && mob.getLastHurtByMob() == null
                             && mob.canBeAffected(new MobEffectInstance(MobEffects.REGENERATION))){
                         if (mob.tickCount % 100 == 0) {
                             mob.heal(1.0F);
