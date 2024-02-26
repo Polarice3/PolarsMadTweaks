@@ -54,18 +54,18 @@ public class ModMagmaCube extends MagmaCube {
                 newMob.playSound(SoundEvents.FIRE_EXTINGUISH, 1.0F, this.getVoicePitch());
             }
         }
-        if (this.level().random.nextInt(4096) == 0 && this.getSize() > 1) {
+        if (this.level.random.nextInt(4096) == 0 && this.getSize() > 1) {
             int i = this.getRandom().nextInt(3);
             BlockPos blockpos = this.blockPosition();
-            if (this.level().getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
+            if (this.level.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
                 if (i > 0) {
                     for (int j = 0; j < i; ++j) {
                         blockpos = blockpos.offset(this.getRandom().nextInt(3) - 1, 1, this.getRandom().nextInt(3) - 1);
-                        if (this.level().isLoaded(blockpos)) {
-                            BlockState blockstate = this.level().getBlockState(blockpos);
+                        if (this.level.isLoaded(blockpos)) {
+                            BlockState blockstate = this.level.getBlockState(blockpos);
                             if (blockstate.isAir()) {
-                                if (BlockUtils.hasFlammableNeighbours(this.level(), blockpos)) {
-                                    this.level().setBlockAndUpdate(blockpos, Blocks.FIRE.defaultBlockState());
+                                if (BlockUtils.hasFlammableNeighbours(this.level, blockpos)) {
+                                    this.level.setBlockAndUpdate(blockpos, Blocks.FIRE.defaultBlockState());
                                 }
                             }
                         }
@@ -73,19 +73,19 @@ public class ModMagmaCube extends MagmaCube {
                 } else {
                     for (int k = 0; k < 3; ++k) {
                         BlockPos blockpos1 = this.blockPosition().offset(this.getRandom().nextInt(3) - 1, 0, this.getRandom().nextInt(3) - 1);
-                        if (this.level().isLoaded(blockpos1)) {
-                            if (this.level().isEmptyBlock(blockpos1.above()) && BlockUtils.isFlammable(this.level(), blockpos1, Direction.UP)) {
-                                this.level().setBlockAndUpdate(blockpos1.above(), Blocks.FIRE.defaultBlockState());
+                        if (this.level.isLoaded(blockpos1)) {
+                            if (this.level.isEmptyBlock(blockpos1.above()) && BlockUtils.isFlammable(this.level, blockpos1, Direction.UP)) {
+                                this.level.setBlockAndUpdate(blockpos1.above(), Blocks.FIRE.defaultBlockState());
                             }
                         }
                     }
                 }
             }
-            if (this.level() instanceof ServerLevel serverLevel) {
+            if (this.level instanceof ServerLevel serverLevel) {
                 for (int k = 0; k < this.getSize(); ++k) {
                     BlockPos blockpos1 = this.blockPosition().offset(this.getRandom().nextInt(3) - 1, 0, this.getRandom().nextInt(3) - 1);
-                    if (this.level().isLoaded(blockpos1)) {
-                        BlockState blockstate = this.level().getBlockState(blockpos1);
+                    if (this.level.isLoaded(blockpos1)) {
+                        BlockState blockstate = this.level.getBlockState(blockpos1);
                         if (blockstate.is(Blocks.SNOW)){
                             Block.dropResources(blockstate, serverLevel, blockpos1);
                             serverLevel.removeBlock(blockpos1, false);
@@ -142,7 +142,7 @@ public class ModMagmaCube extends MagmaCube {
     protected void dealDamage(LivingEntity target) {
         if (this.isAlive()) {
             int i = this.getSize();
-            if (this.distanceToSqr(target) < 0.6D * (double)i * 0.6D * (double)i && this.hasLineOfSight(target) && target.hurt(this.damageSources().mobAttack(this), this.getAttackDamage())) {
+            if (this.distanceToSqr(target) < 0.6D * (double)i * 0.6D * (double)i && this.hasLineOfSight(target) && target.hurt(DamageSource.mobAttack(this), this.getAttackDamage())) {
                 this.playSound(ModSounds.MAGMA_CUBE_LAND.get(), 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                 this.doEnchantDamageEffects(this, target);
                 if (!target.fireImmune()){

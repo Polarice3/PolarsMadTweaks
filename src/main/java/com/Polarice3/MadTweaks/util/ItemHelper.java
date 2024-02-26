@@ -9,7 +9,7 @@ import net.minecraft.world.level.Level;
 public class ItemHelper {
 
     public static ItemEntity itemEntityDrop(LivingEntity livingEntity, ItemStack itemStack){
-        return new ItemEntity(livingEntity.level(), livingEntity.getX(), livingEntity.getY(), livingEntity.getZ(), itemStack);
+        return new ItemEntity(livingEntity.level, livingEntity.getX(), livingEntity.getY(), livingEntity.getZ(), itemStack);
     }
 
     public static void addItemEntity(Level level, BlockPos blockPos, ItemStack itemStack){

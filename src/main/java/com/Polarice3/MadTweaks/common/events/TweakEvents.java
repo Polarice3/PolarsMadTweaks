@@ -13,10 +13,9 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -175,7 +174,7 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.LivingMobHeal.get()){
-                if (!mob.level().isClientSide) {
+                if (!mob.level.isClientSide) {
                     if (mob.getTarget() == null && MobUtils.isHurt(mob)
                             && mob.canBeAffected(new MobEffectInstance(MobEffects.REGENERATION))){
                         if (mob.tickCount % 100 == 0) {
@@ -186,7 +185,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.BlazeFireHeal.get()) {
                 if (mob instanceof Blaze blaze) {
-                    if (!mob.level().isClientSide) {
+                    if (!mob.level.isClientSide) {
                         if (MobUtils.isInFire(blaze)) {
                             if (MobUtils.isHurt(blaze)) {
                                 if (blaze.tickCount % 50 == 0) {
@@ -232,7 +231,7 @@ public class TweakEvents {
                         if (mob.getLastHurtMob() == null) {
                             if (j > 0) {
                                 if (mob.tickCount % j == 0) {
-                                    mob.hurt(mob.damageSources().starve(), 1.0F);
+                                    mob.hurt(DamageSource.STARVE, 1.0F);
                                 }
                             }
                         }
@@ -263,7 +262,7 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.LimitMobArrows.get()) {
-                if (!mob.level().isClientSide) {
+                if (!mob.level.isClientSide) {
                     if (TweaksCapHelper.init(mob) && TweaksCapHelper.arrowCount(mob) <= 0 && mob.tickCount >= 20) {
                         if (mob.getMainHandItem().is(itemHolder -> itemHolder.get() instanceof ProjectileWeaponItem)) {
                             mob.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -283,7 +282,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.WardenSculkHeal.get()){
                 if (mob instanceof Warden warden){
-                    BlockState blockState = warden.level().getBlockState(warden.blockPosition().below());
+                    BlockState blockState = warden.level.getBlockState(warden.blockPosition().below());
                     if (blockState.is(Blocks.SCULK)){
                         if (warden.tickCount % 20 == 0){
                             warden.heal(2.0F);
@@ -294,25 +293,25 @@ public class TweakEvents {
             if (TweaksConfig.PhantasmicPhantoms.get()) {
                 if (mob instanceof Phantom phantom) {
                     phantom.noPhysics = true;
-                    if (phantom.level().isDay() && !phantom.level().isThundering()){
+                    if (phantom.level.isDay() && !phantom.level.isThundering()){
                         phantom.spawnAnim();
                         phantom.discard();
                     }
                 }
             }
             if (TweaksConfig.IllagerBadInfluence.get()) {
-                if (mob.level() instanceof ServerLevel serverLevel) {
+                if (mob.level instanceof ServerLevel serverLevel) {
                     if (mob instanceof AbstractVillager abstractVillager) {
                         if (abstractVillager.isBaby()) {
                             double range = abstractVillager.getAttribute(Attributes.FOLLOW_RANGE) != null ? abstractVillager.getAttributeValue(Attributes.FOLLOW_RANGE) : 16.0D;
-                            List<Raider> raiders = abstractVillager.level().getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
+                            List<Raider> raiders = abstractVillager.level.getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
                             if (raiders.size() >= 4) {
                                 if (abstractVillager.getAge() >= -50) {
                                     int chance = Math.min(16, raiders.size());
                                     abstractVillager.handleEntityEvent((byte) 13);
                                     AbstractIllager illager;
                                     if (raiders.stream().anyMatch(raider -> raider instanceof SpellcasterIllager)
-                                            && abstractVillager.level().random.nextInt(32 - chance) == 0) {
+                                            && abstractVillager.level.random.nextInt(32 - chance) == 0) {
                                         abstractVillager.playSound(SoundEvents.EVOKER_AMBIENT);
                                         illager = abstractVillager.convertTo(EntityType.EVOKER, true);
                                     } else if (raiders.size() >= 8) {
@@ -340,14 +339,14 @@ public class TweakEvents {
         LivingEntity target = event.getEntity();
         if (TweaksConfig.WardenAreaAttack.get()) {
             if (entity instanceof Warden warden) {
-                if (!event.getSource().is(DamageTypes.THORNS)) {
+                if (!event.getSource().isMagic()) {
                     float f = (float) warden.getAttributeValue(Attributes.ATTACK_DAMAGE);
                     if (f > 0) {
                         float f3 = (1.0F + EnchantmentHelper.getSweepingDamageRatio(warden)) * f;
-                        for (LivingEntity livingentity : warden.level().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0F, 0.25D, 1.0F))) {
+                        for (LivingEntity livingentity : warden.level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0F, 0.25D, 1.0F))) {
                             if (livingentity != warden && livingentity != target && !warden.isAlliedTo(livingentity) && (!(livingentity instanceof ArmorStand) || !((ArmorStand) livingentity).isMarker()) && warden.distanceToSqr(livingentity) < 16.0D && livingentity != warden.getVehicle()) {
                                 livingentity.knockback(0.4F, Mth.sin(warden.getYRot() * ((float) Math.PI / 180F)), -Mth.cos(warden.getYRot() * ((float) Math.PI / 180F)));
-                                if (livingentity.hurt(warden.damageSources().thorns(warden), f3)) {
+                                if (livingentity.hurt(DamageSource.thorns(warden), f3)) {
                                     EnchantmentHelper.doPostHurtEffects(livingentity, warden);
                                     EnchantmentHelper.doPostDamageEffects(warden, livingentity);
                                 }
@@ -359,7 +358,7 @@ public class TweakEvents {
         }
         if (TweaksConfig.BlazeFireHeal.get()) {
             if (target instanceof Blaze blaze) {
-                if (event.getSource().is(DamageTypeTags.IS_FIRE) && entity instanceof LivingEntity && !(entity instanceof Blaze)) {
+                if (event.getSource().isFire() && entity instanceof LivingEntity && !(entity instanceof Blaze)) {
                     blaze.heal(event.getAmount());
                 }
             }
@@ -384,7 +383,7 @@ public class TweakEvents {
     public static void LivingHurt(LivingHurtEvent event){
         Entity entity = event.getSource().getEntity();
         LivingEntity target = event.getEntity();
-        if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
+        if (event.getSource().isFire()) {
             if (target instanceof Creeper creeper) {
                 if (TweaksConfig.FireCreeperIgnite.get() > 0) {
                     float chance = TweaksConfig.FireCreeperIgnite.get() / 100.0F;
@@ -400,8 +399,8 @@ public class TweakEvents {
                 if (TweaksConfig.MethaneCow.get() > 0) {
                     float chance = TweaksConfig.MethaneCow.get() / 100.0F;
                     if (cow.getRandom().nextFloat() <= chance) {
-                        if (!cow.level().isClientSide) {
-                            cow.level().explode(cow, cow.getX(), cow.getY(), cow.getZ(), 2.0F, Level.ExplosionInteraction.NONE);
+                        if (!cow.level.isClientSide) {
+                            cow.level.explode(cow, cow.getX(), cow.getY(), cow.getZ(), 2.0F, Explosion.BlockInteraction.NONE);
                             cow.discard();
                         }
                     }
@@ -411,7 +410,7 @@ public class TweakEvents {
         if (TweaksConfig.MaterialIronGolems.get()) {
             if (target instanceof IronGolem) {
                 float amount = event.getAmount() / 10.0F;
-                if (event.getSource().is(DamageTypeTags.BYPASSES_ARMOR)) {
+                if (event.getSource().isBypassArmor()) {
                     amount = event.getAmount();
                 }
                 if (entity instanceof LivingEntity livingEntity) {
@@ -512,7 +511,7 @@ public class TweakEvents {
     public static void ExplosionEvents(ExplosionEvent event){
         Explosion explosion = event.getExplosion();
         if (TweaksConfig.NoCreeperGriefing.get()) {
-            if (explosion.getExploder() instanceof Creeper || explosion.getIndirectSourceEntity() instanceof Creeper) {
+            if (explosion.getExploder() instanceof Creeper || explosion.getSourceMob() instanceof Creeper) {
                 explosion.clearToBlow();
             }
         }

@@ -40,7 +40,7 @@ public class TweakedTrident extends ThrownTrident {
     }
 
     public boolean canPickUp(){
-        return !this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0;
+        return !this.level.isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0;
     }
 
     public ItemStack getItem(){
@@ -56,7 +56,7 @@ public class TweakedTrident extends ThrownTrident {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+    public Packet<?> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
 }

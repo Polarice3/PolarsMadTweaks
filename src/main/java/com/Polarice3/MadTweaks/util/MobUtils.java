@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 
@@ -42,15 +42,15 @@ public class MobUtils {
 
     public static boolean isInFire(LivingEntity livingEntity){
         AABB axisalignedbb = livingEntity.getBoundingBox();
-        BlockPos blockpos = BlockPos.containing(axisalignedbb.minX + 0.001D, axisalignedbb.minY + 0.001D, axisalignedbb.minZ + 0.001D);
-        BlockPos blockpos1 = BlockPos.containing(axisalignedbb.maxX - 0.001D, axisalignedbb.maxY - 0.001D, axisalignedbb.maxZ - 0.001D);
+        BlockPos blockpos = new BlockPos(axisalignedbb.minX + 0.001D, axisalignedbb.minY + 0.001D, axisalignedbb.minZ + 0.001D);
+        BlockPos blockpos1 = new BlockPos(axisalignedbb.maxX - 0.001D, axisalignedbb.maxY - 0.001D, axisalignedbb.maxZ - 0.001D);
         BlockPos.MutableBlockPos blockpos$mutable = new BlockPos.MutableBlockPos();
-        if (livingEntity.level().hasChunksAt(blockpos, blockpos1)) {
+        if (livingEntity.level.hasChunksAt(blockpos, blockpos1)) {
             for(int i = blockpos.getX(); i <= blockpos1.getX(); ++i) {
                 for(int j = blockpos.getY(); j <= blockpos1.getY(); ++j) {
                     for(int k = blockpos.getZ(); k <= blockpos1.getZ(); ++k) {
                         blockpos$mutable.set(i, j, k);
-                        BlockState blockstate = livingEntity.level().getBlockState(blockpos$mutable);
+                        BlockState blockstate = livingEntity.level.getBlockState(blockpos$mutable);
                         if (blockstate.getBlock() instanceof BaseFireBlock){
                             return true;
                         }
@@ -62,7 +62,7 @@ public class MobUtils {
     }
 
     public static List<Entity> pushedBy(LivingEntity livingEntity){
-        return livingEntity.level().getEntities(livingEntity, livingEntity.getBoundingBox(), EntitySelector.pushableBy(livingEntity));
+        return livingEntity.level.getEntities(livingEntity, livingEntity.getBoundingBox(), EntitySelector.pushableBy(livingEntity));
     }
 
     public static boolean isPushed(LivingEntity livingEntity){
@@ -100,15 +100,15 @@ public class MobUtils {
     public static List<BlockState> surroundingBlocks(LivingEntity livingEntity, Predicate<BlockState> blockPredicate){
         List<BlockState> blockStates = new ArrayList<>();
         AABB axisalignedbb = livingEntity.getBoundingBox();
-        BlockPos blockpos = BlockPos.containing(axisalignedbb.minX + 0.001D, axisalignedbb.minY + 0.001D, axisalignedbb.minZ + 0.001D);
-        BlockPos blockpos1 = BlockPos.containing(axisalignedbb.maxX - 0.001D, axisalignedbb.maxY - 0.001D, axisalignedbb.maxZ - 0.001D);
+        BlockPos blockpos = new BlockPos(axisalignedbb.minX + 0.001D, axisalignedbb.minY + 0.001D, axisalignedbb.minZ + 0.001D);
+        BlockPos blockpos1 = new BlockPos(axisalignedbb.maxX - 0.001D, axisalignedbb.maxY - 0.001D, axisalignedbb.maxZ - 0.001D);
         BlockPos.MutableBlockPos blockpos$mutable = new BlockPos.MutableBlockPos();
-        if (livingEntity.level().hasChunksAt(blockpos, blockpos1)) {
+        if (livingEntity.level.hasChunksAt(blockpos, blockpos1)) {
             for(int i = blockpos.getX(); i <= blockpos1.getX(); ++i) {
                 for(int j = blockpos.getY(); j <= blockpos1.getY(); ++j) {
                     for(int k = blockpos.getZ(); k <= blockpos1.getZ(); ++k) {
                         blockpos$mutable.set(i, j, k);
-                        BlockState blockstate = livingEntity.level().getBlockState(blockpos$mutable);
+                        BlockState blockstate = livingEntity.level.getBlockState(blockpos$mutable);
                         if (blockPredicate.test(blockstate)){
                             blockStates.add(blockstate);
                         }
@@ -123,8 +123,8 @@ public class MobUtils {
         return !surroundingBlocks(livingEntity, blockPredicate).isEmpty();
     }
 
-    public static LootParams.Builder createLootContext(DamageSource pDamageSource, LivingEntity livingEntity) {
-        LootParams.Builder lootparams$builder = (new LootParams.Builder((ServerLevel)livingEntity.level())).withParameter(LootContextParams.THIS_ENTITY, livingEntity).withParameter(LootContextParams.ORIGIN, livingEntity.position()).withParameter(LootContextParams.DAMAGE_SOURCE, pDamageSource).withOptionalParameter(LootContextParams.KILLER_ENTITY, pDamageSource.getEntity()).withOptionalParameter(LootContextParams.DIRECT_KILLER_ENTITY, pDamageSource.getDirectEntity());
+    public static LootContext.Builder createLootContext(DamageSource pDamageSource, LivingEntity livingEntity) {
+        LootContext.Builder lootparams$builder = (new LootContext.Builder((ServerLevel)livingEntity.level)).withParameter(LootContextParams.THIS_ENTITY, livingEntity).withParameter(LootContextParams.ORIGIN, livingEntity.position()).withParameter(LootContextParams.DAMAGE_SOURCE, pDamageSource).withOptionalParameter(LootContextParams.KILLER_ENTITY, pDamageSource.getEntity()).withOptionalParameter(LootContextParams.DIRECT_KILLER_ENTITY, pDamageSource.getDirectEntity());
         if (livingEntity.getLastHurtByMob() != null && livingEntity.getLastHurtByMob() instanceof Player player) {
             lootparams$builder = lootparams$builder.withParameter(LootContextParams.LAST_DAMAGE_PLAYER, player).withLuck(player.getLuck());
         }
@@ -133,11 +133,11 @@ public class MobUtils {
     }
 
     public static boolean isSunBurnTick(Entity entity) {
-        if (entity.level().isDay() && !entity.level().isClientSide) {
+        if (entity.level.isDay() && !entity.level.isClientSide) {
             float f = entity.getLightLevelDependentMagicValue();
-            BlockPos blockpos = BlockPos.containing(entity.getX(), entity.getEyeY(), entity.getZ());
+            BlockPos blockpos = new BlockPos(entity.getX(), entity.getEyeY(), entity.getZ());
             boolean flag = entity.isInWaterRainOrBubble() || entity.isInPowderSnow || entity.wasInPowderSnow;
-            return f > 0.5F && entity.level().random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && !flag && entity.level().canSeeSky(blockpos);
+            return f > 0.5F && entity.level.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && !flag && entity.level.canSeeSky(blockpos);
         }
         return false;
     }

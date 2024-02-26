@@ -21,7 +21,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> MAGMA_CUBE_DEATH = create("magma_cube_death");
 
     static RegistryObject<SoundEvent> create(String name) {
-        SoundEvent event = SoundEvent.createVariableRangeEvent(MadTweaks.location(name));
+        SoundEvent event = new  SoundEvent(MadTweaks.location(name));
         return SOUNDS.register(name, () -> event);
     }
 }

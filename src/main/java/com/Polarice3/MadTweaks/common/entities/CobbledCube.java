@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -47,7 +46,7 @@ public class CobbledCube extends Slime {
         if (this.isInWater()){
             this.onInsideBubbleColumn(true);
             if (this.fallDistance > 1 && this.verticalCollisionBelow){
-                this.die(this.damageSources().drown());
+                this.die(DamageSource.DROWN);
             }
         }
     }
@@ -74,7 +73,7 @@ public class CobbledCube extends Slime {
     @Override
     public void die(DamageSource p_21014_) {
         if (!this.isRemoved() && !this.dead) {
-            if (this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+            if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
                 int l = this.getSize();
                 l = Mth.floor(Math.tan(0.3D * l) * Math.PI * 1.5D);
                 for (int i = 0; i < l; ++i) {
@@ -93,15 +92,15 @@ public class CobbledCube extends Slime {
 
             this.dead = true;
             this.getCombatTracker().recheckStatus();
-            Level level = this.level();
+            Level level = this.level;
             if (level instanceof ServerLevel serverlevel) {
-                if (entity == null || entity.killedEntity(serverlevel, this)) {
+                if (entity == null || entity.wasKilled(serverlevel, this)) {
                     this.gameEvent(GameEvent.ENTITY_DIE);
                     this.dropAllDeathLoot(p_21014_);
                 }
 
-                this.level().broadcastEntityEvent(this, (byte)3);
-                this.level().broadcastEntityEvent(this, (byte)60);
+                this.level.broadcastEntityEvent(this, (byte)3);
+                this.level.broadcastEntityEvent(this, (byte)60);
             }
             this.playSound(SoundEvents.STONE_BREAK, 1.0F, this.getVoicePitch());
             this.discard();
@@ -129,7 +128,7 @@ public class CobbledCube extends Slime {
     public boolean hurt(DamageSource damageSource, float amount) {
         if (MobUtils.toolAttack(damageSource, item -> item instanceof PickaxeItem)){
             amount *= 2.0F;
-        } else if (!damageSource.is(DamageTypeTags.IS_EXPLOSION) && !damageSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)){
+        } else if (!damageSource.isExplosion() && !damageSource.isBypassInvul()){
             return false;
         }
         return super.hurt(damageSource, amount);

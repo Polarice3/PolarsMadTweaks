@@ -4,19 +4,22 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.EntityDamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
-import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.ClimbOnTopOfPowderSnowGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
@@ -53,7 +56,7 @@ public class ModSilverfish extends Silverfish {
 
     protected void registerGoals() {
         this.friendsGoal = new ModSilverfish.SilverfishWakeUpFriendsGoal(this);
-        this.goalSelector.addGoal(1, new ClimbOnTopOfPowderSnowGoal(this, this.level()));
+        this.goalSelector.addGoal(1, new ClimbOnTopOfPowderSnowGoal(this, this.level));
         this.goalSelector.addGoal(3, this.friendsGoal);
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(4, new RandomStrollGoal(this, 1.0D));
@@ -96,7 +99,7 @@ public class ModSilverfish extends Silverfish {
         if (this.isInvulnerableTo(p_33527_)) {
             return false;
         } else {
-            if ((p_33527_.getEntity() != null || p_33527_.is(DamageTypeTags.ALWAYS_TRIGGERS_SILVERFISH)) && this.friendsGoal != null) {
+            if ((p_33527_ instanceof EntityDamageSource || p_33527_ == DamageSource.MAGIC) && this.friendsGoal != null) {
                 this.friendsGoal.notifyHurt();
             }
 
@@ -116,7 +119,7 @@ public class ModSilverfish extends Silverfish {
     }
 
     public void updateSwimming() {
-        if (!this.level().isClientSide) {
+        if (!this.level.isClientSide) {
             if (this.isEffectiveAi() && this.isInWater()) {
                 this.navigation = this.waterNavigation;
                 this.setSwimming(true);
@@ -161,7 +164,7 @@ public class ModSilverfish extends Silverfish {
                 this.fish.setSpeed(f2);
                 this.fish.setDeltaMovement(this.fish.getDeltaMovement().add((double)f2 * d0 * 0.005D, (double)f2 * d1 * 0.1D, (double)f2 * d2 * 0.005D));
             } else {
-                if (!this.fish.onGround()) {
+                if (!this.fish.isOnGround()) {
                     this.fish.setDeltaMovement(this.fish.getDeltaMovement().add(0.0D, -0.008D, 0.0D));
                 }
 
@@ -189,10 +192,10 @@ public class ModSilverfish extends Silverfish {
                 return false;
             } else {
                 RandomSource randomsource = this.mob.getRandom();
-                if (net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.mob.level(), this.mob) && randomsource.nextInt(reducedTickDelay(10)) == 0) {
+                if (net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.mob.level, this.mob) && randomsource.nextInt(reducedTickDelay(10)) == 0) {
                     this.selectedDirection = Direction.getRandom(randomsource);
-                    BlockPos blockpos = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()).relative(this.selectedDirection);
-                    BlockState blockstate = this.mob.level().getBlockState(blockpos);
+                    BlockPos blockpos = new BlockPos(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()).relative(this.selectedDirection);
+                    BlockState blockstate = this.mob.level.getBlockState(blockpos);
                     if (InfestedBlock.isCompatibleHostBlock(blockstate)) {
                         this.doMerge = true;
                         return true;
@@ -212,8 +215,8 @@ public class ModSilverfish extends Silverfish {
             if (!this.doMerge) {
                 super.start();
             } else {
-                LevelAccessor levelaccessor = this.mob.level();
-                BlockPos blockpos = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()).relative(this.selectedDirection);
+                LevelAccessor levelaccessor = this.mob.level;
+                BlockPos blockpos = new BlockPos(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()).relative(this.selectedDirection);
                 BlockState blockstate = levelaccessor.getBlockState(blockpos);
                 if (InfestedBlock.isCompatibleHostBlock(blockstate)) {
                     levelaccessor.setBlock(blockpos, InfestedBlock.infestedStateByHost(blockstate), 3);
@@ -247,7 +250,7 @@ public class ModSilverfish extends Silverfish {
         public void tick() {
             --this.lookForFriends;
             if (this.lookForFriends <= 0) {
-                Level level = this.silverfish.level();
+                Level level = this.silverfish.level;
                 RandomSource randomsource = this.silverfish.getRandom();
                 BlockPos blockpos = this.silverfish.blockPosition();
 

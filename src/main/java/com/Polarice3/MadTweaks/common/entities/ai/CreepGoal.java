@@ -21,7 +21,7 @@ public class CreepGoal extends Goal {
    }
 
    public boolean canUse() {
-      List<? extends LivingEntity> list = this.creeper.level().getEntitiesOfClass(LivingEntity.class, this.creeper.getBoundingBox().inflate(8.0D, 4.0D, 8.0D));
+      List<? extends LivingEntity> list = this.creeper.level.getEntitiesOfClass(LivingEntity.class, this.creeper.getBoundingBox().inflate(8.0D, 4.0D, 8.0D));
       LivingEntity target = null;
       double d0 = Double.MAX_VALUE;
 

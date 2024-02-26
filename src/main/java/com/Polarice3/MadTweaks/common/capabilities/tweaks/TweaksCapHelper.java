@@ -24,7 +24,7 @@ public class TweaksCapHelper {
 
     public static void setArrowCount(LivingEntity livingEntity, int arrows){
         getCapability(livingEntity).setArrowCount(arrows);
-        if (!livingEntity.level().isClientSide){
+        if (!livingEntity.level.isClientSide){
             sendTweaksUpdatePacket(livingEntity);
         }
     }

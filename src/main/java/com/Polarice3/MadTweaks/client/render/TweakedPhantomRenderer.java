@@ -3,7 +3,7 @@ package com.Polarice3.MadTweaks.client.render;
 import com.Polarice3.MadTweaks.TweaksConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import com.mojang.math.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PhantomModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -88,8 +88,8 @@ public class TweakedPhantomRenderer extends MobRenderer<Phantom, PhantomModel<Ph
         float f8 = 0.0F;
         float f5 = 0.0F;
         if (!shouldSit && p_115308_.isAlive()) {
-            f8 = p_115308_.walkAnimation.speed(p_115310_);
-            f5 = p_115308_.walkAnimation.position(p_115310_);
+            f8 = Mth.lerp(p_115310_, p_115308_.animationSpeedOld, p_115308_.animationSpeed);
+            f5 = p_115308_.animationPosition - p_115308_.animationSpeed * (1.0F - p_115310_);
             if (p_115308_.isBaby()) {
                 f5 *= 3.0F;
             }
@@ -153,6 +153,6 @@ public class TweakedPhantomRenderer extends MobRenderer<Phantom, PhantomModel<Ph
 
     protected void setupRotations(Phantom p_115685_, PoseStack p_115686_, float p_115687_, float p_115688_, float p_115689_) {
         super.setupRotations(p_115685_, p_115686_, p_115687_, p_115688_, p_115689_);
-        p_115686_.mulPose(Axis.XP.rotationDegrees(p_115685_.getXRot()));
+        p_115686_.mulPose(Vector3f.XP.rotationDegrees(p_115685_.getXRot()));
     }
 }
