@@ -2,11 +2,13 @@ package com.Polarice3.MadTweaks.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Spider;
@@ -18,6 +20,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -149,5 +155,47 @@ public class MobUtils {
             double d2 = serverLevel.random.nextGaussian() * 0.02D;
             serverLevel.sendParticles(particleOptions, entity.getRandomX(1.0D), entity.getRandomY() + 1.0D, entity.getRandomZ(1.0D), 0, d0, d1, d2, 0.5F);
         }
+    }
+
+    public static boolean isInBlock(Entity entity, Predicate<BlockState> blockState){
+        float f = entity.getBbWidth() * 0.8F;
+        AABB aabb = AABB.ofSize(entity.getEyePosition(), (double)f, 1.0E-6D, (double)f);
+
+        return BlockPos.betweenClosedStream(aabb).anyMatch((p_201942_) -> {
+            BlockState blockstate = entity.level.getBlockState(p_201942_);
+            return blockState.test(blockstate) && Shapes.joinIsNotEmpty(blockstate.getCollisionShape(entity.level, p_201942_).move((double)p_201942_.getX(), (double)p_201942_.getY(), (double)p_201942_.getZ()), Shapes.create(aabb), BooleanOp.AND);
+        });
+    }
+
+    public static void ClimbAnyWall(LivingEntity livingEntity){
+        Vec3 movement = livingEntity.getDeltaMovement();
+        if (livingEntity instanceof Player player){
+            if (!player.getAbilities().flying && player.horizontalCollision){
+                movement = new Vec3(movement.x, 0.2D, movement.z);
+            }
+            player.setDeltaMovement(movement);
+        } else {
+            if (livingEntity.horizontalCollision){
+                movement = new Vec3(movement.x, 0.2D, movement.z);
+            }
+            livingEntity.setDeltaMovement(movement);
+        }
+    }
+
+    public static List<EntityType<?>> getEntityTypesConfig(List<? extends String> config){
+        List<EntityType<?>> list = new ArrayList<>();
+        if (!config.isEmpty()){
+            for (String id : config){
+                EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(id));
+                if (entityType != null){
+                    list.add(entityType);
+                }
+            }
+        }
+        return list;
+    }
+
+    public static boolean hasEntityTypesConfig(List<? extends String> config, EntityType<?> entityType){
+        return !getEntityTypesConfig(config).isEmpty() && getEntityTypesConfig(config).contains(entityType);
     }
 }

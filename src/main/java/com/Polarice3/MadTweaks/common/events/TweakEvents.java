@@ -35,6 +35,7 @@ import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -43,6 +44,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.level.ExplosionEvent;
@@ -62,7 +64,7 @@ public class TweakEvents {
         if (!world.isClientSide()){
             if (entity instanceof LivingEntity livingEntity) {
                 if (!TweaksCapHelper.init(livingEntity)){
-                    if (livingEntity instanceof RangedAttackMob){
+                    if (livingEntity instanceof RangedAttackMob && !livingEntity.getType().is(Tags.EntityTypes.BOSSES)){
                         TweaksCapHelper.setArrowCount(livingEntity, world.random.nextInt(TweaksConfig.ExtraMobArrowAmount.get() + 1) + TweaksConfig.MinMobArrowAmount.get());
                     }
                     TweaksCapHelper.setInit(livingEntity, true);
@@ -135,7 +137,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.LimitMobArrows.get()) {
                 if (entity instanceof Projectile projectile) {
-                    if (projectile.getOwner() instanceof Mob mob) {
+                    if (projectile.getOwner() instanceof Mob mob && !mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType())) {
                         TweaksCapHelper.decreaseArrow(mob);
                     }
                 }
@@ -175,7 +177,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.LivingMobHeal.get()){
                 if (!mob.level.isClientSide) {
-                    if (mob.getTarget() == null && MobUtils.isHurt(mob) && mob.getLastHurtByMob() == null
+                    if (mob.getTarget() == null && mob.getLastHurtByMob() == null && MobUtils.isHurt(mob)
                             && mob.canBeAffected(new MobEffectInstance(MobEffects.REGENERATION))){
                         if (mob.tickCount % 100 == 0) {
                             mob.heal(1.0F);
@@ -263,7 +265,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.LimitMobArrows.get()) {
                 if (!mob.level.isClientSide) {
-                    if (TweaksCapHelper.init(mob) && TweaksCapHelper.arrowCount(mob) <= 0 && mob.tickCount >= 20) {
+                    if (!mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType()) && TweaksCapHelper.init(mob) && TweaksCapHelper.arrowCount(mob) <= 0 && mob.tickCount >= 20) {
                         if (mob.getMainHandItem().is(itemHolder -> itemHolder.get() instanceof ProjectileWeaponItem)) {
                             mob.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                         } else if (mob.getOffhandItem().is(itemHolder -> itemHolder.get() instanceof ProjectileWeaponItem)) {
@@ -296,6 +298,40 @@ public class TweakEvents {
                     if (phantom.level.isDay() && !phantom.level.isThundering()){
                         phantom.spawnAnim();
                         phantom.discard();
+                    }
+                }
+            }
+            if (TweaksConfig.CreeperClimb.get()) {
+                if (mob instanceof Creeper creeper) {
+                    MobUtils.ClimbAnyWall(creeper);
+                }
+            }
+            if (TweaksConfig.EndermanTNTExplode.get()) {
+                if (mob instanceof EnderMan enderMan) {
+                    if (enderMan.getCarriedBlock() != null && enderMan.getCarriedBlock().is(Blocks.TNT)) {
+                        if (enderMan.isOnFire()) {
+                            enderMan.level.addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
+                            if (enderMan.tickCount % 80 == 0) {
+                                enderMan.setCarriedBlock(null);
+                                enderMan.level.explode(null, enderMan.getX(), enderMan.getY(), enderMan.getZ(), 4.0F, Explosion.BlockInteraction.BREAK);
+                            }
+                        }
+                    }
+                }
+            }
+            if (mob instanceof Raider raider){
+                Raid raid = raider.getCurrentRaid();
+                if (raid != null) {
+                    if (raid.isLoss()) {
+                        if (TweaksConfig.IllagerRaidExplode.get()) {
+                            if (raid.celebrationTicks >= 550 && raider.isCelebrating()) {
+                                if (!raider.level.isClientSide) {
+                                    Explosion.BlockInteraction explosion$blockinteraction = net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(raider.level, raider) ? Explosion.BlockInteraction.DESTROY : Explosion.BlockInteraction.NONE;
+                                    raider.level.explode(raider, raider.getX(), raider.getY(), raider.getZ(), 7.0F, explosion$blockinteraction);
+                                    raider.discard();
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -451,7 +487,7 @@ public class TweakEvents {
     @SubscribeEvent
     public static void LivingProjectile(LivingGetProjectileEvent event){
         if (TweaksConfig.LimitMobArrows.get()) {
-            if (event.getEntity() instanceof Mob mob){
+            if (event.getEntity() instanceof Mob mob && !mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType())){
                 if (TweaksCapHelper.arrowCount(mob) <= 0){
                     event.setProjectileItemStack(ItemStack.EMPTY);
                 }
@@ -471,7 +507,7 @@ public class TweakEvents {
                         if (source instanceof Zombie) {
                             ZombieHorse zombieHorse = horse.convertTo(EntityType.ZOMBIE_HORSE, false);
                             if (zombieHorse != null) {
-                                zombieHorse.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(zombieHorse.blockPosition()), MobSpawnType.CONVERSION, new Zombie.ZombieGroupData(false, true), (CompoundTag) null);
+                                zombieHorse.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(zombieHorse.blockPosition()), MobSpawnType.CONVERSION, null, null);
                                 zombieHorse.setOwnerUUID(horse.getOwnerUUID());
                                 zombieHorse.setTamed(horse.isTamed());
                                 net.minecraftforge.event.ForgeEventFactory.onLivingConvert(horse, zombieHorse);
@@ -489,6 +525,43 @@ public class TweakEvents {
                         victim.skipDropExperience();
                         warden.heal(victim.getExperienceReward());
                         MobUtils.addParticlesAroundSelf(serverLevel, ParticleTypes.SCULK_SOUL, warden);
+                    }
+                }
+            }
+            if (victim instanceof Zombie zombie && !(victim instanceof Husk)){
+                boolean convert = false;
+                if (TweaksConfig.ZombieSandHusk.get()) {
+                    if (event.getSource() == DamageSource.IN_WALL) {
+                        if (MobUtils.isInBlock(zombie, blockState -> blockState.is(Tags.Blocks.SAND))) {
+                            convert = true;
+                        }
+                    }
+                }
+                if (TweaksConfig.ZombieBurnHusk.get()) {
+                    if (event.getSource().isFire()) {
+                        if (serverLevel.getBiome(zombie.blockPosition()).containsTag(Tags.Biomes.IS_HOT_OVERWORLD) && serverLevel.canSeeSky(zombie.blockPosition())) {
+                            convert = true;
+                        }
+                    }
+                }
+                if (convert){
+                    Husk husk = zombie.convertTo(EntityType.HUSK, true);
+                    if (husk != null) {
+                        husk.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(husk.blockPosition()), MobSpawnType.CONVERSION, null, null);
+                        net.minecraftforge.event.ForgeEventFactory.onLivingConvert(zombie, husk);
+                        if (!husk.isSilent()) {
+                            serverLevel.levelEvent((Player) null, 1026, husk.blockPosition(), 0);
+                        }
+                    }
+                }
+            }
+            if (TweaksConfig.ZombiePlayer.get()) {
+                if (victim instanceof Player player) {
+                    if (source instanceof Zombie) {
+                        Zombie zombie = new Zombie(serverLevel);
+                        zombie.setPos(player.position());
+                        zombie.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(zombie.blockPosition()), MobSpawnType.CONVERSION, null, null);
+                        player.level.addFreshEntity(zombie);
                     }
                 }
             }
