@@ -55,6 +55,8 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlazeHealthGlow;
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlazeNoBio;
 
+    public static final ForgeConfigSpec.ConfigValue<Boolean> EndermanTNTExplode;
+
     public static final ForgeConfigSpec.ConfigValue<Boolean> MaterialIronGolems;
     public static final ForgeConfigSpec.ConfigValue<Boolean> MaterialSnowGolems;
     public static final ForgeConfigSpec.ConfigValue<Boolean> GolemNoBio;
@@ -95,6 +97,8 @@ public class TweaksConfig {
                 .define("catSmallAttack", true);
         PhantasmicPhantoms = BUILDER.comment("Phantoms looks translucent and can phase through walls, Default: true")
                 .define("phantasmicPhantoms", true);
+        EndermanTNTExplode = BUILDER.comment("Enderman's TNT will explode if the Enderman is on fire while holding it, Default: true")
+                .define("endermanTNTExplode", true);
         FrogMagmaCubeHurt = BUILDER.comment("Frogs take damage and is set aflame after eating a Magma Cube., Default: true")
                 .define("frogMagmaCubeHurt", true);
         SleepingHeal = BUILDER.comment("Sleeping entities will periodically heal from prior damage., Default: true")

@@ -10,7 +10,6 @@ import com.Polarice3.MadTweaks.common.entities.ai.SeekFireGoal;
 import com.Polarice3.MadTweaks.util.MathHelper;
 import com.Polarice3.MadTweaks.util.MobUtils;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -305,6 +304,19 @@ public class TweakEvents {
             if (TweaksConfig.CreeperClimb.get()) {
                 if (mob instanceof Creeper creeper) {
                     MobUtils.ClimbAnyWall(creeper);
+                }
+            }
+            if (TweaksConfig.EndermanTNTExplode.get()) {
+                if (mob instanceof EnderMan enderMan) {
+                    if (enderMan.getCarriedBlock() != null && enderMan.getCarriedBlock().is(Blocks.TNT)) {
+                        if (enderMan.isOnFire()) {
+                            enderMan.level().addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
+                            if (enderMan.tickCount % 80 == 0) {
+                                enderMan.setCarriedBlock(null);
+                                enderMan.level().explode(null, enderMan.getX(), enderMan.getY(), enderMan.getZ(), 4.0F, Level.ExplosionInteraction.TNT);
+                            }
+                        }
+                    }
                 }
             }
             if (mob instanceof Raider raider){
