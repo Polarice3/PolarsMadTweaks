@@ -2,7 +2,6 @@ package com.Polarice3.MadTweaks.common.entities.ai;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Creeper;
 
 import javax.annotation.Nullable;

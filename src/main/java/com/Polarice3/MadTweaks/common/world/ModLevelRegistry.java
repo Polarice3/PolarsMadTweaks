@@ -4,7 +4,6 @@ import com.Polarice3.MadTweaks.MadTweaks;
 import com.Polarice3.MadTweaks.TweaksConfig;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
 import net.minecraft.core.Holder;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;

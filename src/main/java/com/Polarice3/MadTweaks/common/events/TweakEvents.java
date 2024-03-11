@@ -13,6 +13,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -20,10 +21,16 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
 import net.minecraft.world.entity.animal.*;
 import net.minecraft.world.entity.animal.frog.Frog;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -34,6 +41,8 @@ import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
@@ -42,6 +51,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.common.Tags;
@@ -53,6 +63,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = MadTweaks.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TweakEvents {
@@ -70,20 +81,43 @@ public class TweakEvents {
                     TweaksCapHelper.setInit(livingEntity, true);
                 }
                 if (livingEntity instanceof Mob mob) {
-                    if (TweaksConfig.HungrySpiders.get()) {
-                        if (mob instanceof Spider spider) {
+                    if (mob instanceof Spider spider) {
+                        if (TweaksConfig.HungrySpiders.get()) {
                             spider.targetSelector.addGoal(1, new MobUtils.SpiderTargetGoal<>(spider, Animal.class));
                             spider.targetSelector.addGoal(1, new MobUtils.SpiderTargetGoal<>(spider, Spider.class, target -> target.getHealth() < spider.getHealth()));
                         }
                     }
-                    if (TweaksConfig.RottenWolves.get()) {
-                        if (mob instanceof Wolf wolf) {
-                            wolf.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(wolf, Zombie.class, false, null));
+                    if (mob instanceof Animal animal){
+                        if (animal instanceof Chicken || animal instanceof Cow || animal instanceof Pig || animal instanceof Sheep){
+                            if (TweaksConfig.LivestockRetaliation.get() || TweaksConfig.LivestockRandomHostile.get() || (animal instanceof Chicken && TweaksConfig.ChickenJockeyAttack.get())){
+                                animal.goalSelector.addGoal(0, new MeleeAttackGoal(animal, 1.0F, false));
+                            }
+                            if (TweaksConfig.LivestockRetaliation.get()){
+                                if (TweaksConfig.LivestockRetaliationGroup.get()){
+                                    animal.targetSelector.addGoal(1, new HurtByTargetGoal(animal, animal.getClass()).setAlertOthers());
+                                } else {
+                                    animal.targetSelector.addGoal(1, new HurtByTargetGoal(animal, animal.getClass()));
+                                }
+                            }
+                            if ((TweaksConfig.LivestockRandomHostile.get() && animal.level.random.nextFloat() <= 0.1F)
+                                    || (animal instanceof Chicken chicken && chicken.isChickenJockey() && TweaksConfig.ChickenJockeyAttack.get())){
+                                animal.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(animal, Player.class, true));
+                            }
                         }
-                    }
-                    if (TweaksConfig.ViolentPolarBears.get()) {
-                        if (mob instanceof PolarBear polarBear) {
-                            polarBear.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(polarBear, LivingEntity.class, 0, false, false, (livingEntity1 -> livingEntity1.isAttackable() && !(livingEntity1 instanceof Creeper) && !(livingEntity1 instanceof PolarBear))));
+                        if (animal instanceof Wolf wolf) {
+                            if (TweaksConfig.RottenWolves.get()) {
+                                wolf.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(wolf, Zombie.class, false, null));
+                            }
+                        }
+                        if (animal instanceof PolarBear polarBear) {
+                            if (TweaksConfig.ViolentPolarBears.get()) {
+                                polarBear.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(polarBear, LivingEntity.class, 0, false, false, (livingEntity1 -> livingEntity1.isAttackable() && !(livingEntity1 instanceof Creeper) && !(livingEntity1 instanceof PolarBear))));
+                            }
+                        }
+                        if (animal instanceof Cat cat) {
+                            if (TweaksConfig.CatSmallAttack.get()) {
+                                cat.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(cat, LivingEntity.class, false, livingEntity1 -> livingEntity1.getBoundingBox().getSize() < cat.getBoundingBox().getSize() && !(livingEntity1 instanceof Cat) && !livingEntity1.isBaby()));
+                            }
                         }
                     }
                     if (TweaksConfig.BlazeFireHeal.get()){
@@ -114,14 +148,14 @@ public class TweakEvents {
                             mob.convertTo(TweaksEntityTypes.SILVERFISH.get(), true);
                         }
                     }
-                    if (TweaksConfig.CreeperStalkBaby.get()) {
-                        if (mob instanceof Creeper creeper) {
+                    if (mob instanceof Creeper creeper) {
+                        if (TweaksConfig.CreeperStalkBaby.get()) {
                             creeper.goalSelector.addGoal(5, new CreepGoal(creeper, 1.0D));
                         }
-                    }
-                    if (TweaksConfig.CatSmallAttack.get()) {
-                        if (mob instanceof Cat cat) {
-                            cat.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(cat, LivingEntity.class, false, livingEntity1 -> livingEntity1.getBoundingBox().getSize() < cat.getBoundingBox().getSize() && !(livingEntity1 instanceof Cat) && !livingEntity1.isBaby()));
+                        if (TweaksConfig.CreeperClimb.get()){
+                            creeper.navigation = new WallClimberNavigation(creeper, creeper.level);
+                        } else if (creeper.getNavigation() instanceof WallClimberNavigation){
+                            creeper.navigation = new GroundPathNavigation(creeper, creeper.level);
                         }
                     }
                     if (TweaksConfig.MobAvoidsWarden.get()) {
@@ -135,10 +169,21 @@ public class TweakEvents {
                     }
                 }
             }
-            if (TweaksConfig.LimitMobArrows.get()) {
-                if (entity instanceof Projectile projectile) {
+            if (entity instanceof Projectile projectile) {
+                if (TweaksConfig.LimitMobArrows.get()) {
                     if (projectile.getOwner() instanceof Mob mob && !mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType())) {
                         TweaksCapHelper.decreaseArrow(mob);
+                    }
+                }
+                if (TweaksConfig.StrengthAffectsProjectiles.get()) {
+                    if (projectile.getOwner() instanceof LivingEntity livingEntity && livingEntity.hasEffect(MobEffects.DAMAGE_BOOST)) {
+                        MobEffectInstance mobEffectInstance = livingEntity.getEffect(MobEffects.DAMAGE_BOOST);
+                        if (mobEffectInstance != null) {
+                            int amp = (mobEffectInstance.getAmplifier() + 1) * 3;
+                            if (projectile instanceof AbstractArrow arrow) {
+                                arrow.setBaseDamage(arrow.getBaseDamage() + amp);
+                            }
+                        }
                     }
                 }
             }
@@ -176,8 +221,8 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.LivingMobHeal.get()){
-                if (!mob.level().isClientSide) {
-                    if (mob.getTarget() == null && MobUtils.isHurt(mob)
+                if (!mob.level.isClientSide) {
+                    if (mob.getTarget() == null && mob.getLastHurtByMob() == null && MobUtils.isHurt(mob)
                             && mob.canBeAffected(new MobEffectInstance(MobEffects.REGENERATION))){
                         if (mob.tickCount % 100 == 0) {
                             mob.heal(1.0F);
@@ -187,7 +232,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.BlazeFireHeal.get()) {
                 if (mob instanceof Blaze blaze) {
-                    if (!mob.level().isClientSide) {
+                    if (!mob.level.isClientSide) {
                         if (MobUtils.isInFire(blaze)) {
                             if (MobUtils.isHurt(blaze)) {
                                 if (blaze.tickCount % 50 == 0) {
@@ -264,7 +309,7 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.LimitMobArrows.get()) {
-                if (!mob.level().isClientSide) {
+                if (!mob.level.isClientSide) {
                     if (!mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType()) && TweaksCapHelper.init(mob) && TweaksCapHelper.arrowCount(mob) <= 0 && mob.tickCount >= 20) {
                         if (mob.getMainHandItem().is(itemHolder -> itemHolder.get() instanceof ProjectileWeaponItem)) {
                             mob.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -284,7 +329,7 @@ public class TweakEvents {
             }
             if (TweaksConfig.WardenSculkHeal.get()){
                 if (mob instanceof Warden warden){
-                    BlockState blockState = warden.level().getBlockState(warden.blockPosition().below());
+                    BlockState blockState = warden.level.getBlockState(warden.blockPosition().below());
                     if (blockState.is(Blocks.SCULK)){
                         if (warden.tickCount % 20 == 0){
                             warden.heal(2.0F);
@@ -295,7 +340,7 @@ public class TweakEvents {
             if (TweaksConfig.PhantasmicPhantoms.get()) {
                 if (mob instanceof Phantom phantom) {
                     phantom.noPhysics = true;
-                    if (phantom.level().isDay() && !phantom.level().isThundering()){
+                    if (phantom.level.isDay() && !phantom.level.isThundering()){
                         phantom.spawnAnim();
                         phantom.discard();
                     }
@@ -310,7 +355,7 @@ public class TweakEvents {
                 if (mob instanceof EnderMan enderMan) {
                     if (enderMan.getCarriedBlock() != null && enderMan.getCarriedBlock().is(Blocks.TNT)) {
                         if (enderMan.isOnFire()) {
-                            enderMan.level().addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
+                            enderMan.level.addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
                             if (enderMan.tickCount % 80 == 0) {
                                 enderMan.setCarriedBlock(null);
                                 enderMan.level().explode(null, enderMan.getX(), enderMan.getY(), enderMan.getZ(), 4.0F, Level.ExplosionInteraction.TNT);
@@ -320,13 +365,19 @@ public class TweakEvents {
                 }
             }
             if (mob instanceof Raider raider){
+                if (TweaksConfig.IllagerPatrolLeaderBuff.get()) {
+                    if (raider.isPatrolLeader()) {
+                        raider.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 5, 2, false, false));
+                        raider.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 5, 0, false, false));
+                    }
+                }
                 Raid raid = raider.getCurrentRaid();
                 if (raid != null) {
                     if (raid.isLoss()) {
                         if (TweaksConfig.IllagerRaidExplode.get()) {
                             if (raid.celebrationTicks >= 550 && raider.isCelebrating()) {
-                                if (!raider.level().isClientSide) {
-                                    raider.level().explode(raider, raider.getX(), raider.getY(), raider.getZ(), 7.0F, Level.ExplosionInteraction.MOB);
+                                if (!raider.level.isClientSide) {
+                                    raider.level.explode(raider, raider.getX(), raider.getY(), raider.getZ(), 7.0F, Level.ExplosionInteraction.MOB);
                                     raider.discard();
                                 }
                             }
@@ -335,18 +386,18 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.IllagerBadInfluence.get()) {
-                if (mob.level() instanceof ServerLevel serverLevel) {
+                if (mob.level instanceof ServerLevel serverLevel) {
                     if (mob instanceof AbstractVillager abstractVillager) {
                         if (abstractVillager.isBaby()) {
                             double range = abstractVillager.getAttribute(Attributes.FOLLOW_RANGE) != null ? abstractVillager.getAttributeValue(Attributes.FOLLOW_RANGE) : 16.0D;
-                            List<Raider> raiders = abstractVillager.level().getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
+                            List<Raider> raiders = abstractVillager.level.getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
                             if (raiders.size() >= 4) {
                                 if (abstractVillager.getAge() >= -50) {
                                     int chance = Math.min(16, raiders.size());
                                     abstractVillager.handleEntityEvent((byte) 13);
                                     AbstractIllager illager;
                                     if (raiders.stream().anyMatch(raider -> raider instanceof SpellcasterIllager)
-                                            && abstractVillager.level().random.nextInt(32 - chance) == 0) {
+                                            && abstractVillager.level.random.nextInt(32 - chance) == 0) {
                                         abstractVillager.playSound(SoundEvents.EVOKER_AMBIENT);
                                         illager = abstractVillager.convertTo(EntityType.EVOKER, true);
                                     } else if (raiders.size() >= 8) {
@@ -366,6 +417,23 @@ public class TweakEvents {
                 }
             }
         }
+
+        boolean fish = livingEntity.getMainHandItem().is(ItemTags.FISHES) && TweaksConfig.FishSlap.get();
+
+        AttributeInstance knockback = livingEntity.getAttribute(Attributes.ATTACK_KNOCKBACK);
+        float increaseKnockback = 5.0F;
+        AttributeModifier attributemodifier = new AttributeModifier(UUID.fromString("b18c8ca8-953f-4d62-99f7-f39d14d6c48a"), "Fishy Business", increaseKnockback, AttributeModifier.Operation.ADDITION);
+        if (knockback != null){
+            if (fish){
+                if (!knockback.hasModifier(attributemodifier)){
+                    knockback.addPermanentModifier(attributemodifier);
+                }
+            } else {
+                if (knockback.hasModifier(attributemodifier)){
+                    knockback.removeModifier(attributemodifier);
+                }
+            }
+        }
     }
 
     @SubscribeEvent
@@ -378,7 +446,7 @@ public class TweakEvents {
                     float f = (float) warden.getAttributeValue(Attributes.ATTACK_DAMAGE);
                     if (f > 0) {
                         float f3 = (1.0F + EnchantmentHelper.getSweepingDamageRatio(warden)) * f;
-                        for (LivingEntity livingentity : warden.level().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0F, 0.25D, 1.0F))) {
+                        for (LivingEntity livingentity : warden.level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0F, 0.25D, 1.0F))) {
                             if (livingentity != warden && livingentity != target && !warden.isAlliedTo(livingentity) && (!(livingentity instanceof ArmorStand) || !((ArmorStand) livingentity).isMarker()) && warden.distanceToSqr(livingentity) < 16.0D && livingentity != warden.getVehicle()) {
                                 livingentity.knockback(0.4F, Mth.sin(warden.getYRot() * ((float) Math.PI / 180F)), -Mth.cos(warden.getYRot() * ((float) Math.PI / 180F)));
                                 if (livingentity.hurt(warden.damageSources().thorns(warden), f3)) {
@@ -412,6 +480,18 @@ public class TweakEvents {
                 }
             }
         }
+        if (entity instanceof LivingEntity livingEntity){
+            if (MobUtils.physicalAttacks(event.getSource())) {
+                if (TweaksConfig.TorchFire.get()) {
+                    if (livingEntity.getMainHandItem().is(item -> item instanceof BlockItem blockItem && blockItem.getBlock() instanceof TorchBlock)) {
+                        if (livingEntity.getRandom().nextFloat() < 0.15F) {
+                            target.setSecondsOnFire(2);
+                            livingEntity.getMainHandItem().shrink(1);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @SubscribeEvent
@@ -434,8 +514,8 @@ public class TweakEvents {
                 if (TweaksConfig.MethaneCow.get() > 0) {
                     float chance = TweaksConfig.MethaneCow.get() / 100.0F;
                     if (cow.getRandom().nextFloat() <= chance) {
-                        if (!cow.level().isClientSide) {
-                            cow.level().explode(cow, cow.getX(), cow.getY(), cow.getZ(), 2.0F, Level.ExplosionInteraction.NONE);
+                        if (!cow.level.isClientSide) {
+                            cow.level.explode(cow, cow.getX(), cow.getY(), cow.getZ(), 2.0F, Level.ExplosionInteraction.NONE);
                             cow.discard();
                         }
                     }
@@ -465,6 +545,21 @@ public class TweakEvents {
                     if (MobUtils.toolAttack(event.getSource(), item -> item instanceof ShovelItem shovelItem
                             && shovelItem.isCorrectToolForDrops(new ItemStack(item), Blocks.SNOW_BLOCK.defaultBlockState()))) {
                         event.setAmount(event.getAmount() * itemStack.getDestroySpeed(Blocks.SNOW_BLOCK.defaultBlockState()));
+                    }
+                }
+            }
+        }
+        if (TweaksConfig.StrengthAffectsProjectiles.get()) {
+            if (event.getSource().getDirectEntity() instanceof Projectile projectile) {
+                if (entity instanceof LivingEntity livingEntity && livingEntity.hasEffect(MobEffects.DAMAGE_BOOST)) {
+                    MobEffectInstance mobEffectInstance = livingEntity.getEffect(MobEffects.DAMAGE_BOOST);
+                    if (mobEffectInstance != null) {
+                        int amp = (mobEffectInstance.getAmplifier() + 1) * 3;
+                        if (projectile instanceof AbstractHurtingProjectile) {
+                            if (event.getAmount() > 0.0F) {
+                                event.setAmount(event.getAmount() + amp);
+                            }
+                        }
                     }
                 }
             }
@@ -560,7 +655,7 @@ public class TweakEvents {
                         Zombie zombie = new Zombie(serverLevel);
                         zombie.setPos(player.position());
                         zombie.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(zombie.blockPosition()), MobSpawnType.CONVERSION, null, null);
-                        player.level().addFreshEntity(zombie);
+                        player.level.addFreshEntity(zombie);
                     }
                 }
             }

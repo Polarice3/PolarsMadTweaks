@@ -25,10 +25,18 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> CryingGhast;
     public static final ForgeConfigSpec.ConfigValue<Boolean> CatSmallAttack;
     public static final ForgeConfigSpec.ConfigValue<Boolean> PhantasmicPhantoms;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> TorchFire;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> FishSlap;
+
+    public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliation;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliationGroup;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRandomHostile;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> CowNoEffect;
     public static final ForgeConfigSpec.ConfigValue<Integer> MethaneCow;
     public static final ForgeConfigSpec.ConfigValue<Boolean> GoatNoEffect;
+
+    public static final ForgeConfigSpec.ConfigValue<Boolean> ChickenJockeyAttack;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> MobAvoidsWarden;
     public static final ForgeConfigSpec.ConfigValue<Boolean> WardenAreaAttack;
@@ -63,6 +71,7 @@ public class TweaksConfig {
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> IllagerBadInfluence;
     public static final ForgeConfigSpec.ConfigValue<Boolean> IllagerRaidExplode;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> IllagerPatrolLeaderBuff;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> LimitMobArrows;
     public static final ForgeConfigSpec.ConfigValue<Boolean> NoBowNoArrows;
@@ -72,39 +81,54 @@ public class TweaksConfig {
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> HungerAffectsMobs;
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlindnessAffectsMobs;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> StrengthAffectsProjectiles;
 
     static {
         BUILDER.push("Mob Tweaks");
-        CowNoEffect = BUILDER.comment("Cows don't gain effects that can be healed by drinking milk, Default: true")
-                .define("cowNoEffect", true);
-        MethaneCow = BUILDER.comment("The percentage chance of Cows exploding when taking fire damage, Set to 0 to disable, Default: 11")
-                .defineInRange("methaneCow", 11, 0, 100);
-        GoatNoEffect = BUILDER.comment("Goats don't gain effects that can be healed by drinking milk, Default: true")
-                .define("goatNoEffect", true);
         TweakedMagmaCube = BUILDER.comment("Replaced Magma Cubes with tweaked versions, Default: true")
                 .define("tweakedMagmaCube", true);
         HungrySpiders = BUILDER.comment("Spiders will attack animals and each other if one has less health than the other, Default: true")
                 .define("hungrySpiders", true);
-        RottenWolves = BUILDER.comment("Untamed Wolves will also attack Zombies, Default: true")
-                .define("rottenWolves", true);
-        ViolentPolarBears = BUILDER.comment("Adult Polar Bears are far more aggressive and target most mobs, Default: true")
-                .define("violentPolarBears", true);
         FishySilverfish = BUILDER.comment("Silverfishes can swim, breath and spawn underwater, Default: true")
                 .define("fishySilverfish", true);
         CryingGhast = BUILDER.comment("Ghasts occasionally drop Ghast Tears from themselves, Default: true")
                 .define("cryingGhast", true);
-        CatSmallAttack = BUILDER.comment("Stray cats attack entities that are smaller than it, Default: true")
-                .define("catSmallAttack", true);
         PhantasmicPhantoms = BUILDER.comment("Phantoms looks translucent and can phase through walls, Default: true")
                 .define("phantasmicPhantoms", true);
+        TorchFire = BUILDER.comment("Hitting entities with a torch has a chance of setting them on fire for a bit, consuming the torch, Default: true")
+                .define("torchFire", true);
+        FishSlap = BUILDER.comment("Hitting entities with a fish knocks them back a lot, Default: true")
+                .define("fishSlap", true);
         EndermanTNTExplode = BUILDER.comment("Enderman's TNT will explode if the Enderman is on fire while holding it, Default: true")
                 .define("endermanTNTExplode", true);
-        FrogMagmaCubeHurt = BUILDER.comment("Frogs take damage and is set aflame after eating a Magma Cube., Default: true")
-                .define("frogMagmaCubeHurt", true);
         SleepingHeal = BUILDER.comment("Sleeping entities will periodically heal from prior damage., Default: true")
                 .define("sleepingHeal", true);
         LivingMobHeal = BUILDER.comment("Non-undead mobs periodically heal from prior damage when not targeting or in combat, Default: true")
                 .define("livingMobHeal", true);
+            BUILDER.push("Animals");
+            CowNoEffect = BUILDER.comment("Cows don't gain effects that can be healed by drinking milk, Default: true")
+                    .define("cowNoEffect", true);
+            MethaneCow = BUILDER.comment("The percentage chance of Cows exploding when taking fire damage, Set to 0 to disable, Default: 11")
+                    .defineInRange("methaneCow", 11, 0, 100);
+            GoatNoEffect = BUILDER.comment("Goats don't gain effects that can be healed by drinking milk, Default: true")
+                    .define("goatNoEffect", true);
+            RottenWolves = BUILDER.comment("Untamed Wolves will also attack Zombies, Default: true")
+                    .define("rottenWolves", true);
+            ViolentPolarBears = BUILDER.comment("Adult Polar Bears are far more aggressive and target most mobs, Default: true")
+                    .define("violentPolarBears", true);
+            CatSmallAttack = BUILDER.comment("Stray cats attack entities that are smaller than it, Default: true")
+                    .define("catSmallAttack", true);
+            FrogMagmaCubeHurt = BUILDER.comment("Frogs take damage and is set aflame after eating a Magma Cube., Default: true")
+                    .define("frogMagmaCubeHurt", true);
+            ChickenJockeyAttack = BUILDER.comment("Chickens that are part of a Chicken Jockey will be hostile towards players or mobs that their rider is hostile towards, Default: true")
+                    .define("chickenJockeyAttack", true);
+            LivestockRetaliation = BUILDER.comment("Livestock animals will retaliate against the player when attacked, Default: true")
+                    .define("livestockRetaliation", true);
+            LivestockRetaliationGroup = BUILDER.comment("If 'livestockRetaliation' is enabled, animals will call other of its kind to retaliate as well, Default: true")
+                    .define("livestockRetaliationGroup", true);
+            LivestockRandomHostile = BUILDER.comment("Livestock animals will randomly attack the player, Default: true")
+                    .define("livestockRandomHostile", true);
+            BUILDER.pop();
             BUILDER.push("Mobs Arrows");
             LimitMobArrows = BUILDER.comment("Bow/Crossbow mobs have limited arrows., Default: true")
                     .define("limitMobArrows", true);
@@ -175,6 +199,8 @@ public class TweaksConfig {
                     .define("illagerBadInfluence", true);
             IllagerRaidExplode = BUILDER.comment("Raiders will massively explode after celebrating a successful raid, Default: true")
                     .define("illagerRaidExplode", true);
+            IllagerPatrolLeaderBuff = BUILDER.comment("Patrol leaders will gain several buffs, Default: true")
+                    .define("illagerPatrolLeaderBuff", true);
             BUILDER.pop();
             BUILDER.push("Golems");
             MaterialIronGolems = BUILDER.comment("Iron Golems take 1/10th damage from non-armor penetrative sources, but take extra damage from pickaxes, Default: true")
@@ -189,6 +215,8 @@ public class TweaksConfig {
                     .define("hungerAffectsMobs", true);
             BlindnessAffectsMobs = BUILDER.comment("Blindness effect causes mobs to stop targeting their initial target and reduces their detection range, Default: true")
                     .define("blindnessAffectsMobs", true);
+            StrengthAffectsProjectiles = BUILDER.comment("Strength effect increases projectile damage, if original damage is above 0, Default: true")
+                    .define("strengthAffectsProjectiles", true);
             BUILDER.pop();
         BUILDER.pop();
         SPEC = BUILDER.build();
