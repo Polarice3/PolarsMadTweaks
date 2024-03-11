@@ -81,7 +81,8 @@ public class MobUtils {
 
     public static boolean physicalAttacks(DamageSource source){
         return source.getDirectEntity() != null && source.getDirectEntity() instanceof LivingEntity
-                && (source.getMsgId().equals("mob") || source.getMsgId().equals("player"));
+                && (source.getMsgId().equals("mob")
+                || source.getMsgId().equals("player"));
     }
 
     public static boolean toolAttack(DamageSource source, Predicate<Item> item){

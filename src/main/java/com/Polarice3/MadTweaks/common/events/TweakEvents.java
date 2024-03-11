@@ -10,9 +10,9 @@ import com.Polarice3.MadTweaks.common.entities.ai.SeekFireGoal;
 import com.Polarice3.MadTweaks.util.MathHelper;
 import com.Polarice3.MadTweaks.util.MobUtils;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -20,10 +20,16 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
 import net.minecraft.world.entity.animal.*;
 import net.minecraft.world.entity.animal.frog.Frog;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -34,6 +40,8 @@ import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.raid.Raider;
@@ -42,6 +50,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.common.Tags;
@@ -53,6 +62,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = MadTweaks.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TweakEvents {
@@ -70,20 +80,43 @@ public class TweakEvents {
                     TweaksCapHelper.setInit(livingEntity, true);
                 }
                 if (livingEntity instanceof Mob mob) {
-                    if (TweaksConfig.HungrySpiders.get()) {
-                        if (mob instanceof Spider spider) {
+                    if (mob instanceof Spider spider) {
+                        if (TweaksConfig.HungrySpiders.get()) {
                             spider.targetSelector.addGoal(1, new MobUtils.SpiderTargetGoal<>(spider, Animal.class));
                             spider.targetSelector.addGoal(1, new MobUtils.SpiderTargetGoal<>(spider, Spider.class, target -> target.getHealth() < spider.getHealth()));
                         }
                     }
-                    if (TweaksConfig.RottenWolves.get()) {
-                        if (mob instanceof Wolf wolf) {
-                            wolf.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(wolf, Zombie.class, false, null));
+                    if (mob instanceof Animal animal){
+                        if (animal instanceof Chicken || animal instanceof Cow || animal instanceof Pig || animal instanceof Sheep){
+                            if (TweaksConfig.LivestockRetaliation.get() || TweaksConfig.LivestockRandomHostile.get() || (animal instanceof Chicken && TweaksConfig.ChickenJockeyAttack.get())){
+                                animal.goalSelector.addGoal(0, new MeleeAttackGoal(animal, 1.0F, false));
+                            }
+                            if (TweaksConfig.LivestockRetaliation.get()){
+                                if (TweaksConfig.LivestockRetaliationGroup.get()){
+                                    animal.targetSelector.addGoal(1, new HurtByTargetGoal(animal, animal.getClass()).setAlertOthers());
+                                } else {
+                                    animal.targetSelector.addGoal(1, new HurtByTargetGoal(animal, animal.getClass()));
+                                }
+                            }
+                            if ((TweaksConfig.LivestockRandomHostile.get() && animal.level.random.nextFloat() <= 0.1F)
+                                    || (animal instanceof Chicken chicken && chicken.isChickenJockey() && TweaksConfig.ChickenJockeyAttack.get())){
+                                animal.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(animal, Player.class, true));
+                            }
                         }
-                    }
-                    if (TweaksConfig.ViolentPolarBears.get()) {
-                        if (mob instanceof PolarBear polarBear) {
-                            polarBear.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(polarBear, LivingEntity.class, 0, false, false, (livingEntity1 -> livingEntity1.isAttackable() && !(livingEntity1 instanceof Creeper) && !(livingEntity1 instanceof PolarBear))));
+                        if (animal instanceof Wolf wolf) {
+                            if (TweaksConfig.RottenWolves.get()) {
+                                wolf.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(wolf, Zombie.class, false, null));
+                            }
+                        }
+                        if (animal instanceof PolarBear polarBear) {
+                            if (TweaksConfig.ViolentPolarBears.get()) {
+                                polarBear.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(polarBear, LivingEntity.class, 0, false, false, (livingEntity1 -> livingEntity1.isAttackable() && !(livingEntity1 instanceof Creeper) && !(livingEntity1 instanceof PolarBear))));
+                            }
+                        }
+                        if (animal instanceof Cat cat) {
+                            if (TweaksConfig.CatSmallAttack.get()) {
+                                cat.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(cat, LivingEntity.class, false, livingEntity1 -> livingEntity1.getBoundingBox().getSize() < cat.getBoundingBox().getSize() && !(livingEntity1 instanceof Cat) && !livingEntity1.isBaby()));
+                            }
                         }
                     }
                     if (TweaksConfig.BlazeFireHeal.get()){
@@ -114,14 +147,14 @@ public class TweakEvents {
                             mob.convertTo(TweaksEntityTypes.SILVERFISH.get(), true);
                         }
                     }
-                    if (TweaksConfig.CreeperStalkBaby.get()) {
-                        if (mob instanceof Creeper creeper) {
+                    if (mob instanceof Creeper creeper) {
+                        if (TweaksConfig.CreeperStalkBaby.get()) {
                             creeper.goalSelector.addGoal(5, new CreepGoal(creeper, 1.0D));
                         }
-                    }
-                    if (TweaksConfig.CatSmallAttack.get()) {
-                        if (mob instanceof Cat cat) {
-                            cat.targetSelector.addGoal(1, new NonTameRandomTargetGoal<>(cat, LivingEntity.class, false, livingEntity1 -> livingEntity1.getBoundingBox().getSize() < cat.getBoundingBox().getSize() && !(livingEntity1 instanceof Cat) && !livingEntity1.isBaby()));
+                        if (TweaksConfig.CreeperClimb.get()){
+                            creeper.navigation = new WallClimberNavigation(creeper, creeper.level);
+                        } else if (creeper.getNavigation() instanceof WallClimberNavigation){
+                            creeper.navigation = new GroundPathNavigation(creeper, creeper.level);
                         }
                     }
                     if (TweaksConfig.MobAvoidsWarden.get()) {
@@ -135,10 +168,21 @@ public class TweakEvents {
                     }
                 }
             }
-            if (TweaksConfig.LimitMobArrows.get()) {
-                if (entity instanceof Projectile projectile) {
+            if (entity instanceof Projectile projectile) {
+                if (TweaksConfig.LimitMobArrows.get()) {
                     if (projectile.getOwner() instanceof Mob mob && !mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType())) {
                         TweaksCapHelper.decreaseArrow(mob);
+                    }
+                }
+                if (TweaksConfig.StrengthAffectsProjectiles.get()) {
+                    if (projectile.getOwner() instanceof LivingEntity livingEntity && livingEntity.hasEffect(MobEffects.DAMAGE_BOOST)) {
+                        MobEffectInstance mobEffectInstance = livingEntity.getEffect(MobEffects.DAMAGE_BOOST);
+                        if (mobEffectInstance != null) {
+                            int amp = (mobEffectInstance.getAmplifier() + 1) * 3;
+                            if (projectile instanceof AbstractArrow arrow) {
+                                arrow.setBaseDamage(arrow.getBaseDamage() + amp);
+                            }
+                        }
                     }
                 }
             }
@@ -320,6 +364,12 @@ public class TweakEvents {
                 }
             }
             if (mob instanceof Raider raider){
+                if (TweaksConfig.IllagerPatrolLeaderBuff.get()) {
+                    if (raider.isPatrolLeader()) {
+                        raider.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 5, 2, false, false));
+                        raider.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 5, 0, false, false));
+                    }
+                }
                 Raid raid = raider.getCurrentRaid();
                 if (raid != null) {
                     if (raid.isLoss()) {
@@ -367,6 +417,23 @@ public class TweakEvents {
                 }
             }
         }
+
+        boolean fish = livingEntity.getMainHandItem().is(ItemTags.FISHES) && TweaksConfig.FishSlap.get();
+
+        AttributeInstance knockback = livingEntity.getAttribute(Attributes.ATTACK_KNOCKBACK);
+        float increaseKnockback = 5.0F;
+        AttributeModifier attributemodifier = new AttributeModifier(UUID.fromString("b18c8ca8-953f-4d62-99f7-f39d14d6c48a"), "Fishy Business", increaseKnockback, AttributeModifier.Operation.ADDITION);
+        if (knockback != null){
+            if (fish){
+                if (!knockback.hasModifier(attributemodifier)){
+                    knockback.addPermanentModifier(attributemodifier);
+                }
+            } else {
+                if (knockback.hasModifier(attributemodifier)){
+                    knockback.removeModifier(attributemodifier);
+                }
+            }
+        }
     }
 
     @SubscribeEvent
@@ -410,6 +477,18 @@ public class TweakEvents {
             if (entity instanceof Frog frog) {
                 if (target instanceof MagmaCube) {
                     frog.lavaHurt();
+                }
+            }
+        }
+        if (entity instanceof LivingEntity livingEntity){
+            if (MobUtils.physicalAttacks(event.getSource())) {
+                if (TweaksConfig.TorchFire.get()) {
+                    if (livingEntity.getMainHandItem().is(item -> item instanceof BlockItem blockItem && blockItem.getBlock() instanceof TorchBlock)) {
+                        if (livingEntity.getRandom().nextFloat() < 0.15F) {
+                            target.setSecondsOnFire(2);
+                            livingEntity.getMainHandItem().shrink(1);
+                        }
+                    }
                 }
             }
         }
@@ -466,6 +545,21 @@ public class TweakEvents {
                     if (MobUtils.toolAttack(event.getSource(), item -> item instanceof ShovelItem shovelItem
                             && shovelItem.isCorrectToolForDrops(new ItemStack(item), Blocks.SNOW_BLOCK.defaultBlockState()))) {
                         event.setAmount(event.getAmount() * itemStack.getDestroySpeed(Blocks.SNOW_BLOCK.defaultBlockState()));
+                    }
+                }
+            }
+        }
+        if (TweaksConfig.StrengthAffectsProjectiles.get()) {
+            if (event.getSource().getDirectEntity() instanceof Projectile projectile) {
+                if (entity instanceof LivingEntity livingEntity && livingEntity.hasEffect(MobEffects.DAMAGE_BOOST)) {
+                    MobEffectInstance mobEffectInstance = livingEntity.getEffect(MobEffects.DAMAGE_BOOST);
+                    if (mobEffectInstance != null) {
+                        int amp = (mobEffectInstance.getAmplifier() + 1) * 3;
+                        if (projectile instanceof AbstractHurtingProjectile) {
+                            if (event.getAmount() > 0.0F) {
+                                event.setAmount(event.getAmount() + amp);
+                            }
+                        }
                     }
                 }
             }
