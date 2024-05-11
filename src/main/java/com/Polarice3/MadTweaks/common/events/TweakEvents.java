@@ -7,11 +7,14 @@ import com.Polarice3.MadTweaks.common.entities.ModMagmaCube;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
 import com.Polarice3.MadTweaks.common.entities.ai.CreepGoal;
 import com.Polarice3.MadTweaks.common.entities.ai.SeekFireGoal;
+import com.Polarice3.MadTweaks.common.entities.ai.TweakEnderManGoals;
 import com.Polarice3.MadTweaks.util.MathHelper;
 import com.Polarice3.MadTweaks.util.MobUtils;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -49,6 +52,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -104,6 +108,11 @@ public class TweakEvents {
                             }
                         }
                         if (animal instanceof Wolf wolf) {
+                            if (TweaksConfig.BabyEaterWolves.get()) {
+                                wolf.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(wolf, LivingEntity.class, false, (p_199899_) -> {
+                                    return p_199899_.isBaby() && wolf.getCustomName() != null && (wolf.getCustomName().getString().equals("Princess") || wolf.getCustomName().getString().equals("Cupcake"));
+                                }));
+                            }
                             if (TweaksConfig.RottenWolves.get()) {
                                 wolf.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(wolf, Zombie.class, false, null));
                             }
@@ -166,6 +175,12 @@ public class TweakEvents {
                             }
                         }
                     }
+                    if (mob instanceof EnderMan enderMan){
+                        if (TweaksConfig.EndermanEquality.get()){
+                            enderMan.goalSelector.addGoal(1, new TweakEnderManGoals.EndermanFreezeWhenLookedAt(enderMan));
+                            enderMan.targetSelector.addGoal(1, new TweakEnderManGoals.EndermanLookForTargetGoal(enderMan, enderMan::isAngryAt));
+                        }
+                    }
                 }
             }
             if (entity instanceof Projectile projectile) {
@@ -192,6 +207,9 @@ public class TweakEvents {
     @SubscribeEvent
     public static void LivingEvents(LivingEvent.LivingTickEvent event){
         LivingEntity livingEntity = event.getEntity();
+        Level level = livingEntity.level;
+        BlockPos blockPos = livingEntity.blockPosition();
+        Biome biome = level.getBiome(blockPos).get();
         if ((livingEntity instanceof AbstractGolem && TweaksConfig.GolemNoBio.get())
                 || (livingEntity instanceof Blaze && TweaksConfig.BlazeNoBio.get())) {
             livingEntity.getActiveEffects().removeIf(effectInstance -> {
@@ -293,10 +311,33 @@ public class TweakEvents {
                     mob.convertTo(EntityType.SILVERFISH, true);
                 }
             }
-            if (TweaksConfig.ZombieDecay.get()) {
-                if (mob instanceof Zombie zombie) {
+            if (mob instanceof Zombie zombie) {
+                if (TweaksConfig.ZombieDecay.get()) {
                     if (zombie.tickCount >= MathHelper.minutesToTicks(20)) {
                         zombie.convertTo(EntityType.SKELETON, true);
+                    }
+                }
+                if (mob instanceof Drowned drowned) {
+                    if (TweaksConfig.DrownedDryUp.get()) {
+                        if (biome.getPrecipitation() == Biome.Precipitation.NONE
+                                && biome.getBaseTemperature() >= 2.0F
+                                && !drowned.isInWaterOrRain()) {
+                            for(int i = 0; i < 5; ++i) {
+                                double d0 = drowned.getRandom().nextGaussian() * 0.02D;
+                                double d1 = drowned.getRandom().nextGaussian() * 0.02D;
+                                double d2 = drowned.getRandom().nextGaussian() * 0.02D;
+                                level.addParticle(ParticleTypes.SPLASH, drowned.getRandomX(1.0D), drowned.getRandomY() + 1.0D, drowned.getRandomZ(1.0D), d0, d1, d2);
+                            }
+                            if (drowned.tickCount % 300 == 0) {
+                                drowned.convertTo(EntityType.ZOMBIE, true);
+                                if (!drowned.isSilent()) {
+                                    level.levelEvent((Player)null, 1040, blockPos, 0);
+                                }
+                            }
+                        }
+                    }
+                    if (TweaksConfig.DrownedTooWet.get()){
+                        drowned.clearFire();
                     }
                 }
             }
@@ -308,7 +349,7 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.LimitMobArrows.get()) {
-                if (!mob.level.isClientSide) {
+                if (!level.isClientSide) {
                     if (!mob.getType().is(Tags.EntityTypes.BOSSES) && !MobUtils.hasEntityTypesConfig(TweaksConfig.LimitArrowsBlackList.get(), mob.getType()) && TweaksCapHelper.init(mob) && TweaksCapHelper.arrowCount(mob) <= 0 && mob.tickCount >= 20) {
                         if (mob.getMainHandItem().is(itemHolder -> itemHolder.get() instanceof ProjectileWeaponItem)) {
                             mob.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -318,17 +359,9 @@ public class TweakEvents {
                     }
                 }
             }
-            if (TweaksConfig.CryingGhast.get()) {
-                if (mob instanceof Ghast ghast) {
-                    if (ghast.getRandom().nextInt(6000) == 0) {
-                        ghast.spawnAtLocation(Items.GHAST_TEAR);
-                        ghast.gameEvent(GameEvent.ENTITY_PLACE);
-                    }
-                }
-            }
             if (TweaksConfig.WardenSculkHeal.get()){
                 if (mob instanceof Warden warden){
-                    BlockState blockState = warden.level.getBlockState(warden.blockPosition().below());
+                    BlockState blockState = level.getBlockState(blockPos.below());
                     if (blockState.is(Blocks.SCULK)){
                         if (warden.tickCount % 20 == 0){
                             warden.heal(2.0F);
@@ -336,10 +369,21 @@ public class TweakEvents {
                     }
                 }
             }
+            if (mob instanceof Ghast ghast) {
+                if (TweaksConfig.CryingGhast.get()) {
+                    if (ghast.getRandom().nextInt(6000) == 0) {
+                        ghast.spawnAtLocation(Items.GHAST_TEAR);
+                        ghast.gameEvent(GameEvent.ENTITY_PLACE);
+                    }
+                }
+                if (TweaksConfig.GhostlyGhast.get()){
+                    ghast.noPhysics = true;
+                }
+            }
             if (TweaksConfig.PhantasmicPhantoms.get()) {
                 if (mob instanceof Phantom phantom) {
                     phantom.noPhysics = true;
-                    if (phantom.level.isDay() && !phantom.level.isThundering()){
+                    if (level.isDay() && !level.isThundering()){
                         phantom.spawnAnim();
                         phantom.discard();
                     }
@@ -350,14 +394,14 @@ public class TweakEvents {
                     MobUtils.ClimbAnyWall(creeper);
                 }
             }
-            if (TweaksConfig.EndermanTNTExplode.get()) {
-                if (mob instanceof EnderMan enderMan) {
+            if (mob instanceof EnderMan enderMan) {
+                if (TweaksConfig.EndermanTNTExplode.get()) {
                     if (enderMan.getCarriedBlock() != null && enderMan.getCarriedBlock().is(Blocks.TNT)) {
                         if (enderMan.isOnFire()) {
-                            enderMan.level.addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
+                            level.addParticle(ParticleTypes.SMOKE, enderMan.getX(), enderMan.getY() + 0.5D, enderMan.getZ(), 0.0D, 0.0D, 0.0D);
                             if (enderMan.tickCount % 80 == 0) {
                                 enderMan.setCarriedBlock(null);
-                                enderMan.level.explode(null, enderMan.getX(), enderMan.getY(), enderMan.getZ(), 4.0F, Explosion.BlockInteraction.BREAK);
+                                level.explode(null, enderMan.getX(), enderMan.getY(), enderMan.getZ(), 4.0F, Explosion.BlockInteraction.BREAK);
                             }
                         }
                     }
@@ -375,9 +419,9 @@ public class TweakEvents {
                     if (raid.isLoss()) {
                         if (TweaksConfig.IllagerRaidExplode.get()) {
                             if (raid.celebrationTicks >= 550 && raider.isCelebrating()) {
-                                if (!raider.level.isClientSide) {
+                                if (!level.isClientSide) {
                                     Explosion.BlockInteraction explosion$blockinteraction = net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(raider.level, raider) ? Explosion.BlockInteraction.DESTROY : Explosion.BlockInteraction.NONE;
-                                    raider.level.explode(raider, raider.getX(), raider.getY(), raider.getZ(), 7.0F, explosion$blockinteraction);
+                                    level.explode(raider, raider.getX(), raider.getY(), raider.getZ(), 7.0F, explosion$blockinteraction);
                                     raider.discard();
                                 }
                             }
@@ -386,18 +430,18 @@ public class TweakEvents {
                 }
             }
             if (TweaksConfig.IllagerBadInfluence.get()) {
-                if (mob.level instanceof ServerLevel serverLevel) {
+                if (level instanceof ServerLevel serverLevel) {
                     if (mob instanceof AbstractVillager abstractVillager) {
                         if (abstractVillager.isBaby()) {
                             double range = abstractVillager.getAttribute(Attributes.FOLLOW_RANGE) != null ? abstractVillager.getAttributeValue(Attributes.FOLLOW_RANGE) : 16.0D;
-                            List<Raider> raiders = abstractVillager.level.getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
+                            List<Raider> raiders = serverLevel.getEntitiesOfClass(Raider.class, abstractVillager.getBoundingBox().inflate(range), abstractVillager::hasLineOfSight);
                             if (raiders.size() >= 4) {
                                 if (abstractVillager.getAge() >= -50) {
                                     int chance = Math.min(16, raiders.size());
                                     abstractVillager.handleEntityEvent((byte) 13);
                                     AbstractIllager illager;
                                     if (raiders.stream().anyMatch(raider -> raider instanceof SpellcasterIllager)
-                                            && abstractVillager.level.random.nextInt(32 - chance) == 0) {
+                                            && serverLevel.random.nextInt(32 - chance) == 0) {
                                         abstractVillager.playSound(SoundEvents.EVOKER_AMBIENT);
                                         illager = abstractVillager.convertTo(EntityType.EVOKER, true);
                                     } else if (raiders.size() >= 8) {
@@ -431,6 +475,20 @@ public class TweakEvents {
             } else {
                 if (knockback.hasModifier(attributemodifier)){
                     knockback.removeModifier(attributemodifier);
+                }
+            }
+        }
+        if (!livingEntity.fireImmune()){
+            if (TweaksConfig.LavaConvection.get()) {
+                if (livingEntity.tickCount % 20 == 0) {
+                    for (int k = -3; k < 3; ++k) {
+                        BlockPos blockpos1 = blockPos.offset(k, k, k);
+                        if (level.isLoaded(blockpos1)) {
+                            if (level.getFluidState(blockpos1).is(FluidTags.LAVA)) {
+                                livingEntity.lavaHurt();
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -482,10 +540,10 @@ public class TweakEvents {
         }
         if (entity instanceof LivingEntity livingEntity){
             if (MobUtils.physicalAttacks(event.getSource())) {
-                if (TweaksConfig.TorchFire.get()) {
+                if (TweaksConfig.TorchFire.get() > 0) {
                     if (livingEntity.getMainHandItem().is(item -> item instanceof BlockItem blockItem && blockItem.getBlock() instanceof TorchBlock)) {
-                        if (livingEntity.getRandom().nextFloat() < 0.15F) {
-                            target.setSecondsOnFire(2);
+                        if (livingEntity.getRandom().nextFloat() <= (TweaksConfig.TorchFire.get() / 100.0F)) {
+                            target.setSecondsOnFire(TweaksConfig.TorchFireTime.get());
                             livingEntity.getMainHandItem().shrink(1);
                         }
                     }

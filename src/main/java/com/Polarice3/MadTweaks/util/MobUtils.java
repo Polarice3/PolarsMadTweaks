@@ -6,16 +6,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySelector;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -198,5 +197,22 @@ public class MobUtils {
 
     public static boolean hasEntityTypesConfig(List<? extends String> config, EntityType<?> entityType){
         return !getEntityTypesConfig(config).isEmpty() && getEntityTypesConfig(config).contains(entityType);
+    }
+
+    public static boolean isLookingAtEnderMan(EnderMan enderMan, LivingEntity isLooking) {
+        ItemStack itemstack = ItemStack.EMPTY;
+        if (isLooking instanceof Mob mob){
+            itemstack = mob.getItemBySlot(EquipmentSlot.HEAD);
+        }
+        if (itemstack.getItem() == Blocks.CARVED_PUMPKIN.asItem()) {
+            return false;
+        } else {
+            Vec3 vec3 = isLooking.getViewVector(1.0F).normalize();
+            Vec3 vec31 = new Vec3(enderMan.getX() - isLooking.getX(), enderMan.getEyeY() - isLooking.getEyeY(), enderMan.getZ() - isLooking.getZ());
+            double d0 = vec31.length();
+            vec31 = vec31.normalize();
+            double d1 = vec3.dot(vec31);
+            return d1 > 1.0D - 0.025D / d0 && isLooking.hasLineOfSight(enderMan);
+        }
     }
 }

@@ -16,6 +16,7 @@ public class TweaksConfig {
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> TweakedMagmaCube;
     public static final ForgeConfigSpec.ConfigValue<Boolean> HungrySpiders;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> BabyEaterWolves;
     public static final ForgeConfigSpec.ConfigValue<Boolean> RottenWolves;
     public static final ForgeConfigSpec.ConfigValue<Boolean> ViolentPolarBears;
     public static final ForgeConfigSpec.ConfigValue<Boolean> FrogMagmaCubeHurt;
@@ -23,10 +24,13 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> LivingMobHeal;
     public static final ForgeConfigSpec.ConfigValue<Boolean> FishySilverfish;
     public static final ForgeConfigSpec.ConfigValue<Boolean> CryingGhast;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> GhostlyGhast;
     public static final ForgeConfigSpec.ConfigValue<Boolean> CatSmallAttack;
     public static final ForgeConfigSpec.ConfigValue<Boolean> PhantasmicPhantoms;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> TorchFire;
+    public static final ForgeConfigSpec.ConfigValue<Integer> TorchFire;
+    public static final ForgeConfigSpec.ConfigValue<Integer> TorchFireTime;
     public static final ForgeConfigSpec.ConfigValue<Boolean> FishSlap;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> LavaConvection;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliation;
     public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliationGroup;
@@ -55,6 +59,8 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> ZombieSandHusk;
     public static final ForgeConfigSpec.ConfigValue<Boolean> ZombieBurnHusk;
     public static final ForgeConfigSpec.ConfigValue<Boolean> ZombiePlayer;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> DrownedDryUp;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> DrownedTooWet;
     public static final ForgeConfigSpec.ConfigValue<Boolean> ZombifyHorse;
     public static final ForgeConfigSpec.ConfigValue<Boolean> ZombieHorseDecay;
 
@@ -64,6 +70,7 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlazeNoBio;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> EndermanTNTExplode;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> EndermanEquality;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> MaterialIronGolems;
     public static final ForgeConfigSpec.ConfigValue<Boolean> MaterialSnowGolems;
@@ -93,14 +100,22 @@ public class TweaksConfig {
                 .define("fishySilverfish", true);
         CryingGhast = BUILDER.comment("Ghasts occasionally drop Ghast Tears from themselves, Default: true")
                 .define("cryingGhast", true);
+        GhostlyGhast = BUILDER.comment("Ghasts can phase through walls, Default: true")
+                .define("ghostlyGhast", true);
         PhantasmicPhantoms = BUILDER.comment("Phantoms looks translucent and can phase through walls, Default: true")
                 .define("phantasmicPhantoms", true);
-        TorchFire = BUILDER.comment("Hitting entities with a torch has a chance of setting them on fire for a bit, consuming the torch, Default: true")
-                .define("torchFire", true);
+        TorchFire = BUILDER.comment("The percentage chance of setting entities on fire for a bit when hitting with a torch, Set to 0 to disable, Default: 15")
+                .defineInRange("torchFire", 15, 0, 100);
+        TorchFireTime = BUILDER.comment("How many seconds an entity is set on fire if torchFire is enabled, Default: 2")
+                .defineInRange("torchFireTime", 2, 0, Integer.MAX_VALUE);
         FishSlap = BUILDER.comment("Hitting entities with a fish knocks them back a lot, Default: true")
                 .define("fishSlap", true);
+        LavaConvection = BUILDER.comment("Being near lava, instead of just being in it, will burn entities because thermal dynamics, Default: true")
+                .define("lavaConvection", true);
         EndermanTNTExplode = BUILDER.comment("Enderman's TNT will explode if the Enderman is on fire while holding it, Default: true")
                 .define("endermanTNTExplode", true);
+        EndermanEquality = BUILDER.comment("Enderman will attack any entity that stares at them like players, unless they're wearing a Carved Pumpkin or other Enderman, Default: true")
+                .define("endermanEquality", true);
         SleepingHeal = BUILDER.comment("Sleeping entities will periodically heal from prior damage., Default: true")
                 .define("sleepingHeal", true);
         LivingMobHeal = BUILDER.comment("Non-undead mobs periodically heal from prior damage when not targeting or in combat, Default: true")
@@ -112,6 +127,8 @@ public class TweaksConfig {
                     .defineInRange("methaneCow", 11, 0, 100);
             GoatNoEffect = BUILDER.comment("Goats don't gain effects that can be healed by drinking milk, Default: true")
                     .define("goatNoEffect", true);
+            BabyEaterWolves = BUILDER.comment("Wolves will attack baby mobs if named Princess or Cupcake, Default: true")
+                    .define("babyEaterWolves", true);
             RottenWolves = BUILDER.comment("Untamed Wolves will also attack Zombies, Default: true")
                     .define("rottenWolves", true);
             ViolentPolarBears = BUILDER.comment("Adult Polar Bears are far more aggressive and target most mobs, Default: true")
@@ -134,10 +151,10 @@ public class TweaksConfig {
                     .define("limitMobArrows", true);
             NoBowNoArrows = BUILDER.comment("Bow/Crossbow mobs don't drop arrows if they're not wielding either weapons, Default: true")
                     .define("noBowNoArrows", true);
-            MinMobArrowAmount = BUILDER.comment("Minimum amount of arrows a mob spawns with. Only takes effect if limitMobArrows is enabled, Default: 5")
-                    .defineInRange("minMobArrowAmount", 5, 0, Integer.MAX_VALUE);
-            ExtraMobArrowAmount = BUILDER.comment("Extra amount of arrows a mob can potentially spawn with. Only takes effect if limitMobArrows is enabled, Default: 20")
-                    .defineInRange("extraMobArrowAmount", 20, 1, Integer.MAX_VALUE);
+            MinMobArrowAmount = BUILDER.comment("Minimum amount of arrows a mob spawns with. Only takes effect if limitMobArrows is enabled, Default: 16")
+                    .defineInRange("minMobArrowAmount", 16, 0, Integer.MAX_VALUE);
+            ExtraMobArrowAmount = BUILDER.comment("Extra amount of arrows a mob can potentially spawn with. Only takes effect if limitMobArrows is enabled, Default: 48")
+                    .defineInRange("extraMobArrowAmount", 48, 1, Integer.MAX_VALUE);
             LimitArrowsBlackList = BUILDER.comment("""
                             Add mobs that limitMobArrows does not affect.\s
                             To do so, enter the namespace ID of the mob, like "minecraft:zombie, minecraft:skeleton".""")
@@ -188,7 +205,11 @@ public class TweaksConfig {
             ZombieBurnHusk = BUILDER.comment("Zombies will turn into Husks when burning to death on desert biomes' surface, Default: true")
                     .define("zombieBurnHusk", true);
             ZombiePlayer = BUILDER.comment("A Zombie will spawn on a player's location if the latter is killed by one, Default: true")
-                    .define("ZombiePlayer", true);
+                    .define("zombiePlayer", true);
+            DrownedDryUp = BUILDER.comment("Drowned will dry up and convert into a regular Zombie if out of water and rain in a hot biome, Default: true")
+                    .define("drownedDryUp", true);
+            DrownedTooWet = BUILDER.comment("Drowned will instantly extinguish themselves due to being wet, Default: true")
+                    .define("drownedTooWet", true);
             ZombifyHorse = BUILDER.comment("Horses will turn into Zombie Horses if killed by Zombie, Default: true")
                     .define("zombifyHorse", true);
             ZombieHorseDecay = BUILDER.comment("Zombie Horses will turn into Skeleton Horses after a long period of time, Default: true")
