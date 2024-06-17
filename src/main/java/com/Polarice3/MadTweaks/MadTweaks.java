@@ -12,10 +12,12 @@ import com.Polarice3.MadTweaks.init.ModSounds;
 import com.mojang.serialization.Codec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
@@ -44,6 +46,7 @@ public class MadTweaks {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::setupEntityAttributeCreation);
+        modEventBus.addListener(this::setupEntityAttributeModify);
         modEventBus.addListener(this::SpawnPlacementEvent);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, TweaksConfig.SPEC, "mad-tweaks.toml");
@@ -65,6 +68,14 @@ public class MadTweaks {
         event.put(TweaksEntityTypes.MAGMA_CUBE.get(), ModMagmaCube.createAttributes().build());
         event.put(TweaksEntityTypes.COBBLED_CUBE.get(), ModMagmaCube.createAttributes().build());
         event.put(TweaksEntityTypes.SILVERFISH.get(), ModSilverfish.createAttributes().build());
+    }
+
+    private void setupEntityAttributeModify(final EntityAttributeModificationEvent event){
+        event.getTypes().forEach(entityType -> {
+            if (!event.has(entityType, Attributes.ATTACK_DAMAGE)){
+                event.add(entityType, Attributes.ATTACK_DAMAGE);
+            }
+        });
     }
 
     private void SpawnPlacementEvent(SpawnPlacementRegisterEvent event){
