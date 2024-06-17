@@ -5,6 +5,7 @@ import com.Polarice3.MadTweaks.TweaksConfig;
 import com.Polarice3.MadTweaks.common.capabilities.tweaks.TweaksCapHelper;
 import com.Polarice3.MadTweaks.common.entities.ModMagmaCube;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
+import com.Polarice3.MadTweaks.common.entities.ai.AnimalAttackGoal;
 import com.Polarice3.MadTweaks.common.entities.ai.CreepGoal;
 import com.Polarice3.MadTweaks.common.entities.ai.SeekFireGoal;
 import com.Polarice3.MadTweaks.common.entities.ai.TweakEnderManGoals;
@@ -58,6 +59,7 @@ import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.level.ExplosionEvent;
@@ -70,6 +72,15 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = MadTweaks.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TweakEvents {
+
+    @SubscribeEvent
+    public static void setupEntityAttributeModify(EntityAttributeModificationEvent event){
+        event.getTypes().forEach(entityType -> {
+            if (!event.has(entityType, Attributes.ATTACK_DAMAGE)){
+                event.add(entityType, Attributes.ATTACK_DAMAGE);
+            }
+        });
+    }
 
     @SubscribeEvent
     public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
@@ -92,9 +103,7 @@ public class TweakEvents {
                     }
                     if (mob instanceof Animal animal){
                         if (animal instanceof Chicken || animal instanceof Cow || animal instanceof Pig || animal instanceof Sheep){
-                            if (TweaksConfig.LivestockRetaliation.get() || TweaksConfig.LivestockRandomHostile.get() || (animal instanceof Chicken && TweaksConfig.ChickenJockeyAttack.get())){
-                                animal.goalSelector.addGoal(0, new MeleeAttackGoal(animal, 1.0F, false));
-                            }
+                            animal.goalSelector.addGoal(0, new AnimalAttackGoal(animal, 1.0F, false));
                             if (TweaksConfig.LivestockRetaliation.get()){
                                 if (TweaksConfig.LivestockRetaliationGroup.get()){
                                     animal.targetSelector.addGoal(1, new HurtByTargetGoal(animal, animal.getClass()).setAlertOthers());
