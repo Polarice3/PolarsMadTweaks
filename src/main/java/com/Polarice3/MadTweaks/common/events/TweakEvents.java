@@ -74,15 +74,6 @@ import java.util.UUID;
 public class TweakEvents {
 
     @SubscribeEvent
-    public static void setupEntityAttributeModify(EntityAttributeModificationEvent event){
-        event.getTypes().forEach(entityType -> {
-            if (!event.has(entityType, Attributes.ATTACK_DAMAGE)){
-                event.add(entityType, Attributes.ATTACK_DAMAGE);
-            }
-        });
-    }
-
-    @SubscribeEvent
     public static void onEntityJoinWorld(EntityJoinLevelEvent event) {
         Entity entity = event.getEntity();
         Level world = event.getLevel();
