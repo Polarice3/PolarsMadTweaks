@@ -496,10 +496,11 @@ public class TweakEvents {
 
     @SubscribeEvent
     public static void LivingAttack(LivingAttackEvent event){
-        Entity entity = event.getSource().getEntity();
+        Entity attacker = event.getSource().getEntity();
+        Entity direct = event.getSource().getDirectEntity();
         LivingEntity target = event.getEntity();
         if (TweaksConfig.WardenAreaAttack.get()) {
-            if (entity instanceof Warden warden) {
+            if (attacker instanceof Warden warden) {
                 if (!event.getSource().isMagic()) {
                     float f = (float) warden.getAttributeValue(Attributes.ATTACK_DAMAGE);
                     if (f > 0) {
@@ -519,32 +520,36 @@ public class TweakEvents {
         }
         if (TweaksConfig.BlazeFireHeal.get()) {
             if (target instanceof Blaze blaze) {
-                if (event.getSource().isFire() && entity instanceof LivingEntity && !(entity instanceof Blaze)) {
+                if (event.getSource().isFire() && attacker instanceof LivingEntity && !(attacker instanceof Blaze)) {
                     blaze.heal(event.getAmount());
                 }
             }
         }
         if (TweaksConfig.BlazeMeleeFire.get()){
-            if (entity instanceof Blaze){
+            if (attacker instanceof Blaze){
                 if (!target.fireImmune()){
                     target.setSecondsOnFire(5);
                 }
             }
         }
         if (TweaksConfig.FrogMagmaCubeHurt.get()) {
-            if (entity instanceof Frog frog) {
+            if (attacker instanceof Frog frog) {
                 if (target instanceof MagmaCube) {
                     frog.lavaHurt();
                 }
             }
         }
-        if (entity instanceof LivingEntity livingEntity){
-            if (MobUtils.physicalAttacks(event.getSource())) {
-                if (TweaksConfig.TorchFire.get() > 0) {
-                    if (livingEntity.getMainHandItem().is(item -> item instanceof BlockItem blockItem && blockItem.getBlock() instanceof TorchBlock)) {
-                        if (livingEntity.getRandom().nextFloat() <= (TweaksConfig.TorchFire.get() / 100.0F)) {
-                            target.setSecondsOnFire(TweaksConfig.TorchFireTime.get());
-                            livingEntity.getMainHandItem().shrink(1);
+        if (!target.level.isClientSide) {
+            if (direct instanceof LivingEntity livingDirect) {
+                if (MobUtils.physicalAttacks(event.getSource())) {
+                    if (TweaksConfig.TorchFire.get() > 0) {
+                        if (livingDirect.getMainHandItem().getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof TorchBlock) {
+                            if (livingDirect.getRandom().nextFloat() <= (TweaksConfig.TorchFire.get() / 100.0F)) {
+                                target.setSecondsOnFire(TweaksConfig.TorchFireTime.get());
+                                if (!(livingDirect instanceof Player player && player.getAbilities().instabuild)) {
+                                    livingDirect.getMainHandItem().shrink(1);
+                                }
+                            }
                         }
                     }
                 }
