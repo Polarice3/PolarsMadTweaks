@@ -66,8 +66,6 @@ minecraft {
 
             args '--mod', 'polars_mad_tweaks', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
-            arg '-mixin.config=goety.mixins.json'
-
             mods {
                 polars_mad_tweaks {
                     source sourceSets.main
