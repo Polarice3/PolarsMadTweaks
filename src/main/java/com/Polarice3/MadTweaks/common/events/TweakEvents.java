@@ -2,6 +2,7 @@ package com.Polarice3.MadTweaks.common.events;
 
 import com.Polarice3.MadTweaks.MadTweaks;
 import com.Polarice3.MadTweaks.TweaksConfig;
+import com.Polarice3.MadTweaks.common.blocks.TweaksBlocks;
 import com.Polarice3.MadTweaks.common.capabilities.tweaks.TweaksCapHelper;
 import com.Polarice3.MadTweaks.common.entities.ModMagmaCube;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
@@ -29,7 +30,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
@@ -56,11 +56,11 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraftforge.common.Tags;
-import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.level.ExplosionEvent;
@@ -743,6 +743,17 @@ public class TweakEvents {
         if (TweaksConfig.NoCreeperGriefing.get()) {
             if (explosion.getExploder() instanceof Creeper || explosion.getIndirectSourceEntity() instanceof Creeper) {
                 explosion.clearToBlow();
+            }
+        }
+        List<BlockPos> list = event.getExplosion().getToBlow();
+        for (BlockPos blockPos : list){
+            if (TweaksConfig.ShatteredGlass.get()) {
+                if (event.getLevel().getBlockState(blockPos).getBlock() instanceof GlassBlock) {
+                    BlockState blockState = TweaksBlocks.SHATTERED_GLASS.get().defaultBlockState();
+                    if (blockState.canSurvive(event.getLevel(), blockPos)) {
+                        event.getLevel().setBlockAndUpdate(blockPos, blockState);
+                    }
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package com.Polarice3.MadTweaks;
 
 import com.Polarice3.MadTweaks.client.ClientProxy;
 import com.Polarice3.MadTweaks.common.CommonProxy;
+import com.Polarice3.MadTweaks.common.blocks.TweaksBlocks;
 import com.Polarice3.MadTweaks.common.entities.ModMagmaCube;
 import com.Polarice3.MadTweaks.common.entities.ModSilverfish;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
@@ -43,6 +44,7 @@ public class MadTweaks {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         TweaksEntityTypes.ENTITY_TYPE.register(modEventBus);
+        TweaksBlocks.BLOCK.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::setupEntityAttributeCreation);

@@ -90,7 +90,13 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlindnessAffectsMobs;
     public static final ForgeConfigSpec.ConfigValue<Boolean> StrengthAffectsProjectiles;
 
+    public static final ForgeConfigSpec.ConfigValue<Boolean> ShatteredGlass;
+
     static {
+        BUILDER.push("Block Tweaks");
+        ShatteredGlass = BUILDER.comment("Regular Glass blocks leave a Shattered Glass block when broken without Silk Touch or Explosion, Default: true")
+                .define("shatteredGlass", true);
+        BUILDER.pop();
         BUILDER.push("Mob Tweaks");
         TweakedMagmaCube = BUILDER.comment("Replaced Magma Cubes with tweaked versions, Default: true")
                 .define("tweakedMagmaCube", true);
