@@ -34,6 +34,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.*;
 import net.minecraft.world.entity.animal.frog.Frog;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -41,6 +42,7 @@ import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.monster.*;
+import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -151,6 +153,11 @@ public class TweakEvents {
                             illager.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(illager, Zombie.class, true));
                         }
                     }
+                    if (TweaksConfig.PiglinHateIllagers.get()) {
+                        if (mob instanceof AbstractIllager illager) {
+                            illager.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(illager, AbstractPiglin.class, true));
+                        }
+                    }
                     if (TweaksConfig.FishySilverfish.get()) {
                         if (mob.getType() == EntityType.SILVERFISH) {
                             mob.convertTo(TweaksEntityTypes.SILVERFISH.get(), true);
@@ -247,6 +254,42 @@ public class TweakEvents {
                     }
                 }
             }
+            if (TweaksConfig.MobHatesPlayerStares.get() || TweaksConfig.MobHatesAllStares.get()) {
+                if (!(mob instanceof EnderMan)) {
+                    if (mob.level instanceof ServerLevel serverLevel) {
+                        if (mob.getTarget() == null) {
+                            if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+                                double followRange = mob.getAttributeValue(Attributes.FOLLOW_RANGE);
+                                TargetingConditions conditions = TargetingConditions.forCombat()
+                                        .range(followRange)
+                                        .selector((target) -> MobUtils.isLookingAtEntity(mob, target)
+                                                && !(target instanceof EnderMan)
+                                                && !(target instanceof SnowGolem snowGolem
+                                                && snowGolem.hasPumpkin()));
+                                LivingEntity target = null;
+                                if (TweaksConfig.MobHatesAllStares.get()) {
+                                    List<LivingEntity> list = serverLevel.getNearbyEntities(LivingEntity.class, conditions, mob, mob.getBoundingBox().inflate(followRange));
+                                    target = serverLevel.getNearestEntity(list, conditions, mob, mob.getX(), mob.getY(), mob.getZ());
+                                } else if (TweaksConfig.MobHatesPlayerStares.get()) {
+                                    Player player = serverLevel.getNearestPlayer(conditions, mob);
+                                    if (player != null) {
+                                        target = player;
+                                    }
+                                }
+
+                                if (target != null) {
+                                    if (MobUtils.isLookingAtEntity(mob, target)) {
+                                        if (EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(target) && !target.isAlliedTo(mob) && !mob.isAlliedTo(target)) {
+                                            mob.setNoActionTime(0);
+                                            mob.setTarget(target);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if (TweaksConfig.BlazeFireHeal.get()) {
                 if (mob instanceof Blaze blaze) {
                     if (!mob.level.isClientSide) {
@@ -337,7 +380,9 @@ public class TweakEvents {
                         }
                     }
                     if (TweaksConfig.DrownedTooWet.get()){
-                        drowned.clearFire();
+                        if (drowned.isOnFire()) {
+                            drowned.clearFire();
+                        }
                     }
                 }
             }
