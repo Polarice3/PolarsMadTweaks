@@ -2,7 +2,6 @@ package com.Polarice3.MadTweaks.common.events;
 
 import com.Polarice3.MadTweaks.MadTweaks;
 import com.Polarice3.MadTweaks.TweaksConfig;
-import com.Polarice3.MadTweaks.common.blocks.TweaksBlocks;
 import com.Polarice3.MadTweaks.common.capabilities.tweaks.TweaksCapHelper;
 import com.Polarice3.MadTweaks.common.entities.ModMagmaCube;
 import com.Polarice3.MadTweaks.common.entities.TweaksEntityTypes;
@@ -12,6 +11,7 @@ import com.Polarice3.MadTweaks.common.entities.ai.SeekFireGoal;
 import com.Polarice3.MadTweaks.common.entities.ai.TweakEnderManGoals;
 import com.Polarice3.MadTweaks.util.MathHelper;
 import com.Polarice3.MadTweaks.util.MobUtils;
+import com.Polarice3.MadTweaks.util.TweakDamageSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -35,6 +35,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NonTameRandomTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.*;
 import net.minecraft.world.entity.animal.frog.Frog;
 import net.minecraft.world.entity.animal.goat.Goat;
@@ -42,6 +43,7 @@ import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.animal.horse.ZombieHorse;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.monster.*;
+import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -56,7 +58,6 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.GlassBlock;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -150,6 +151,11 @@ public class TweakEvents {
                         }
                         if (mob instanceof AbstractIllager illager) {
                             illager.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(illager, Zombie.class, true));
+                        }
+                    }
+                    if (TweaksConfig.PiglinHateIllagers.get()) {
+                        if (mob instanceof AbstractIllager illager) {
+                            illager.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(illager, AbstractPiglin.class, true));
                         }
                     }
                     if (TweaksConfig.FishySilverfish.get()) {
@@ -248,6 +254,42 @@ public class TweakEvents {
                     }
                 }
             }
+            if (TweaksConfig.MobHatesPlayerStares.get() || TweaksConfig.MobHatesAllStares.get()) {
+                if (!(mob instanceof EnderMan)) {
+                    if (mob.level instanceof ServerLevel serverLevel) {
+                        if (mob.getTarget() == null) {
+                            if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+                                double followRange = mob.getAttributeValue(Attributes.FOLLOW_RANGE);
+                                TargetingConditions conditions = TargetingConditions.forCombat()
+                                        .range(followRange)
+                                        .selector((target) -> MobUtils.isLookingAtEntity(mob, target)
+                                                && !(target instanceof EnderMan)
+                                                && !(target instanceof SnowGolem snowGolem
+                                                && snowGolem.hasPumpkin()));
+                                LivingEntity target = null;
+                                if (TweaksConfig.MobHatesAllStares.get()) {
+                                    List<LivingEntity> list = serverLevel.getNearbyEntities(LivingEntity.class, conditions, mob, mob.getBoundingBox().inflate(followRange));
+                                    target = serverLevel.getNearestEntity(list, conditions, mob, mob.getX(), mob.getY(), mob.getZ());
+                                } else if (TweaksConfig.MobHatesPlayerStares.get()) {
+                                    Player player = serverLevel.getNearestPlayer(conditions, mob);
+                                    if (player != null) {
+                                        target = player;
+                                    }
+                                }
+
+                                if (target != null) {
+                                    if (MobUtils.isLookingAtEntity(mob, target)) {
+                                        if (EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(target) && !target.isAlliedTo(mob) && !mob.isAlliedTo(target)) {
+                                            mob.setNoActionTime(0);
+                                            mob.setTarget(target);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if (TweaksConfig.BlazeFireHeal.get()) {
                 if (mob instanceof Blaze blaze) {
                     if (!mob.level.isClientSide) {
@@ -338,7 +380,9 @@ public class TweakEvents {
                         }
                     }
                     if (TweaksConfig.DrownedTooWet.get()){
-                        drowned.clearFire();
+                        if (drowned.isOnFire()) {
+                            drowned.clearFire();
+                        }
                     }
                 }
             }
@@ -501,14 +545,14 @@ public class TweakEvents {
         LivingEntity target = event.getEntity();
         if (TweaksConfig.WardenAreaAttack.get()) {
             if (attacker instanceof Warden warden) {
-                if (!event.getSource().is(DamageTypes.THORNS)) {
+                if (!event.getSource().is(TweakDamageSource.SWING)) {
                     float f = (float) warden.getAttributeValue(Attributes.ATTACK_DAMAGE);
                     if (f > 0) {
                         float f3 = (1.0F + EnchantmentHelper.getSweepingDamageRatio(warden)) * f;
                         for (LivingEntity livingentity : warden.level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0F, 0.25D, 1.0F))) {
                             if (livingentity != warden && livingentity != target && !warden.isAlliedTo(livingentity) && (!(livingentity instanceof ArmorStand) || !((ArmorStand) livingentity).isMarker()) && warden.distanceToSqr(livingentity) < 16.0D && livingentity != warden.getVehicle()) {
                                 livingentity.knockback(0.4F, Mth.sin(warden.getYRot() * ((float) Math.PI / 180F)), -Mth.cos(warden.getYRot() * ((float) Math.PI / 180F)));
-                                if (livingentity.hurt(warden.damageSources().thorns(warden), f3)) {
+                                if (livingentity.hurt(TweakDamageSource.swing(warden), f3)) {
                                     EnchantmentHelper.doPostHurtEffects(livingentity, warden);
                                     EnchantmentHelper.doPostDamageEffects(warden, livingentity);
                                 }
@@ -743,17 +787,6 @@ public class TweakEvents {
         if (TweaksConfig.NoCreeperGriefing.get()) {
             if (explosion.getExploder() instanceof Creeper || explosion.getIndirectSourceEntity() instanceof Creeper) {
                 explosion.clearToBlow();
-            }
-        }
-        List<BlockPos> list = event.getExplosion().getToBlow();
-        for (BlockPos blockPos : list){
-            if (TweaksConfig.ShatteredGlass.get()) {
-                if (event.getLevel().getBlockState(blockPos).getBlock() instanceof GlassBlock) {
-                    BlockState blockState = TweaksBlocks.SHATTERED_GLASS.get().defaultBlockState();
-                    if (blockState.canSurvive(event.getLevel(), blockPos)) {
-                        event.getLevel().setBlockAndUpdate(blockPos, blockState);
-                    }
-                }
             }
         }
     }

@@ -31,6 +31,8 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Integer> TorchFireTime;
     public static final ForgeConfigSpec.ConfigValue<Boolean> FishSlap;
     public static final ForgeConfigSpec.ConfigValue<Boolean> LavaConvection;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> MobHatesPlayerStares;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> MobHatesAllStares;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliation;
     public static final ForgeConfigSpec.ConfigValue<Boolean> LivestockRetaliationGroup;
@@ -41,6 +43,7 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> GoatNoEffect;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> ChickenJockeyAttack;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> HoglinNightImmunity;
 
     public static final ForgeConfigSpec.ConfigValue<Boolean> MobAvoidsWarden;
     public static final ForgeConfigSpec.ConfigValue<Boolean> WardenAreaAttack;
@@ -80,6 +83,10 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> IllagerRaidExplode;
     public static final ForgeConfigSpec.ConfigValue<Boolean> IllagerPatrolLeaderBuff;
 
+    public static final ForgeConfigSpec.ConfigValue<Boolean> PiglinHateIllagers;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> PiglinHateVillagers;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> PiglinNightImmunity;
+
     public static final ForgeConfigSpec.ConfigValue<Boolean> LimitMobArrows;
     public static final ForgeConfigSpec.ConfigValue<Boolean> NoBowNoArrows;
     public static final ForgeConfigSpec.ConfigValue<Integer> MinMobArrowAmount;
@@ -90,17 +97,12 @@ public class TweaksConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> BlindnessAffectsMobs;
     public static final ForgeConfigSpec.ConfigValue<Boolean> StrengthAffectsProjectiles;
 
-    public static final ForgeConfigSpec.ConfigValue<Boolean> ShatteredGlass;
-
     static {
-        BUILDER.push("Block Tweaks");
-        ShatteredGlass = BUILDER.comment("Regular Glass blocks leave a Shattered Glass block when broken without Silk Touch or Explosion, Default: true")
-                .define("shatteredGlass", true);
-        BUILDER.pop();
         BUILDER.push("Mob Tweaks");
         TweakedMagmaCube = BUILDER.comment("Replaced Magma Cubes with tweaked versions, Default: true")
                 .define("tweakedMagmaCube", true);
         HungrySpiders = BUILDER.comment("Spiders will attack animals and each other if one has less health than the other, Default: true")
+                .worldRestart()
                 .define("hungrySpiders", true);
         FishySilverfish = BUILDER.comment("Silverfishes can swim, breath and spawn underwater, Default: true")
                 .define("fishySilverfish", true);
@@ -121,7 +123,12 @@ public class TweaksConfig {
         EndermanTNTExplode = BUILDER.comment("Enderman's TNT will explode if the Enderman is on fire while holding it, Default: true")
                 .define("endermanTNTExplode", true);
         EndermanEquality = BUILDER.comment("Enderman will attack any entity that stares at them like players, unless they're wearing a Carved Pumpkin or other Enderman, Default: true")
+                .worldRestart()
                 .define("endermanEquality", true);
+        MobHatesPlayerStares = BUILDER.comment("Mobs will be hostile to players that stared at them, like Enderman, Default: true")
+                .define("mobHatesPlayerStares", true);
+        MobHatesAllStares = BUILDER.comment("Mobs will be hostile to anyone that stared at them, Default: false")
+                .define("mobHatesAllStares", false);
         SleepingHeal = BUILDER.comment("Sleeping entities will periodically heal from prior damage., Default: true")
                 .define("sleepingHeal", true);
         LivingMobHeal = BUILDER.comment("Non-undead mobs periodically heal from prior damage when not targeting or in combat, Default: true")
@@ -134,22 +141,32 @@ public class TweaksConfig {
             GoatNoEffect = BUILDER.comment("Goats don't gain effects that can be healed by drinking milk, Default: true")
                     .define("goatNoEffect", true);
             BabyEaterWolves = BUILDER.comment("Wolves will attack baby mobs if named Princess or Cupcake, Default: true")
+                    .worldRestart()
                     .define("babyEaterWolves", true);
             RottenWolves = BUILDER.comment("Untamed Wolves will also attack Zombies, Default: true")
+                    .worldRestart()
                     .define("rottenWolves", true);
             ViolentPolarBears = BUILDER.comment("Adult Polar Bears are far more aggressive and target most mobs, Default: true")
+                    .worldRestart()
                     .define("violentPolarBears", true);
             CatSmallAttack = BUILDER.comment("Stray cats attack entities that are smaller than it, Default: true")
+                    .worldRestart()
                     .define("catSmallAttack", true);
             FrogMagmaCubeHurt = BUILDER.comment("Frogs take damage and is set aflame after eating a Magma Cube., Default: true")
                     .define("frogMagmaCubeHurt", true);
             ChickenJockeyAttack = BUILDER.comment("Chickens that are part of a Chicken Jockey will be hostile towards players or mobs that their rider is hostile towards, Default: true")
+                    .worldRestart()
                     .define("chickenJockeyAttack", true);
+            HoglinNightImmunity = BUILDER.comment("Hoglin don't zombify if the dimension has day-night cycle and is in night time, Default: true")
+                    .define("hoglinNightImmunity", true);
             LivestockRetaliation = BUILDER.comment("Livestock animals will retaliate against the player when attacked, Default: true")
+                    .worldRestart()
                     .define("livestockRetaliation", true);
             LivestockRetaliationGroup = BUILDER.comment("If 'livestockRetaliation' is enabled, animals will call other of its kind to retaliate as well, Default: true")
+                    .worldRestart()
                     .define("livestockRetaliationGroup", true);
             LivestockRandomHostile = BUILDER.comment("Livestock animals will randomly attack the player, Default: true")
+                    .worldRestart()
                     .define("livestockRandomHostile", true);
             BUILDER.pop();
             BUILDER.push("Mobs Arrows");
@@ -169,6 +186,7 @@ public class TweaksConfig {
             BUILDER.pop();
             BUILDER.push("Blazes");
             BlazeFireHeal = BUILDER.comment("Blazes heal from fire damage or being in fire, Default: true")
+                    .worldRestart()
                     .define("blazeFireHeal", true);
             BlazeMeleeFire = BUILDER.comment("Blazes melee attacks sets target on fire, Default: true")
                     .define("blazeMeleeFire", true);
@@ -183,8 +201,10 @@ public class TweaksConfig {
             PlayerFocusedCreepers = BUILDER.comment("Creepers will never target another mob and only target players, Default: true")
                     .define("playerFocusedCreepers", true);
             CreeperStalkBaby = BUILDER.comment("Creepers follow baby mobs, Default: true")
+                    .worldRestart()
                     .define("creeperStalkBaby", true);
             CreeperClimb = BUILDER.comment("Creepers can climb walls because real life creeper plants climbs on trees, Default: true")
+                    .worldRestart()
                     .define("creeperClimb", true);
             FireCreeperDamage = BUILDER.comment("Creepers take double damage from fire, Default: true")
                     .define("fireCreeperDamage", true);
@@ -193,6 +213,7 @@ public class TweaksConfig {
             BUILDER.pop();
             BUILDER.push("Wardens");
             MobAvoidsWarden = BUILDER.comment("Mobs that have less than 100 max health will avoid the Warden, Default: true")
+                    .worldRestart()
                     .define("mobAvoidsWarden", true);
             WardenAreaAttack = BUILDER.comment("Warden's attacks effects multiple entities much like Player sweep attack, Default: true")
                     .define("wardenAreaAttack", true);
@@ -203,6 +224,7 @@ public class TweaksConfig {
             BUILDER.pop();
             BUILDER.push("Zombies");
             IllagerZombieHate = BUILDER.comment("Illagers and Zombies are hostile to each other, Default: true")
+                    .worldRestart()
                     .define("illagerZombieHate", true);
             ZombieDecay = BUILDER.comment("Zombies will turn into Skeletons after a long period, Default: true")
                     .define("zombieDecay", true);
@@ -236,6 +258,16 @@ public class TweaksConfig {
                     .define("materialSnowGolems", true);
             GolemNoBio = BUILDER.comment("Golems (and Shulkers) can't be effected by Poison, Wither, Hunger, Saturation and Regeneration, Default: true")
                     .define("golemNoBio", true);
+            BUILDER.pop();
+            BUILDER.push("Piglins");
+            PiglinHateIllagers = BUILDER.comment("Piglins and Illagers are hostile to each other, Default: true")
+                    .worldRestart()
+                    .define("piglinHateIllagers", true);
+            PiglinHateVillagers = BUILDER.comment("Piglins are hostile to Villagers, Default: true")
+                    .worldRestart()
+                    .define("piglinHateVillagers", true);
+            PiglinNightImmunity = BUILDER.comment("Piglins don't zombify if the dimension has day-night cycle and is in night time, Default: true")
+                    .define("piglinNightImmunity", true);
             BUILDER.pop();
             BUILDER.push("Effects");
             HungerAffectsMobs = BUILDER.comment("Hunger effect causes mobs to periodically take starvation damage unless they gain Saturation, Default: true")

@@ -46,7 +46,7 @@ public class TweakEnderManGoals {
                 return false;
             }
             double d0 = this.target.distanceToSqr(this.enderman);
-            return !(d0 > 256.0D) && MobUtils.isLookingAtEnderMan(this.enderman, this.target);
+            return !(d0 > 256.0D) && MobUtils.isLookingAtEntity(this.enderman, this.target);
         }
 
         public void start() {
@@ -74,7 +74,7 @@ public class TweakEnderManGoals {
             super(p_32573_, LivingEntity.class, 10, false, false, p_32574_);
             this.enderman = p_32573_;
             this.startAggroTargetConditions = TargetingConditions.forCombat().range(this.getFollowDistance()).selector((p_32578_) -> {
-                return MobUtils.isLookingAtEnderMan(p_32573_, p_32578_) && !(p_32578_ instanceof EnderMan) && !(p_32578_ instanceof SnowGolem snowGolem && snowGolem.hasPumpkin());
+                return MobUtils.isLookingAtEntity(p_32573_, p_32578_) && !(p_32578_ instanceof EnderMan) && !(p_32578_ instanceof SnowGolem snowGolem && snowGolem.hasPumpkin());
             });
         }
 
@@ -110,7 +110,7 @@ public class TweakEnderManGoals {
                 return false;
             }
             if (this.pendingTarget != null) {
-                if (!MobUtils.isLookingAtEnderMan(this.enderman, this.pendingTarget)) {
+                if (!MobUtils.isLookingAtEntity(this.enderman, this.pendingTarget)) {
                     return false;
                 } else {
                     this.enderman.lookAt(this.pendingTarget, 10.0F, 10.0F);
@@ -134,7 +134,7 @@ public class TweakEnderManGoals {
                 }
             } else {
                 if (this.target != null && !this.enderman.isPassenger()) {
-                    if (MobUtils.isLookingAtEnderMan(this.enderman, this.target)) {
+                    if (MobUtils.isLookingAtEntity(this.enderman, this.target)) {
                         if (this.target.distanceToSqr(this.enderman) < 16.0D) {
                             this.teleport();
                         }

@@ -8,11 +8,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -198,8 +198,14 @@ public class MobUtils {
         return !getEntityTypesConfig(config).isEmpty() && getEntityTypesConfig(config).contains(entityType);
     }
 
-    public static boolean isLookingAtEnderMan(EnderMan enderMan, LivingEntity isLooking) {
+    public static boolean isLookingAtEntity(Entity looked, LivingEntity isLooking) {
         ItemStack itemstack = ItemStack.EMPTY;
+        if (looked == null) {
+            return false;
+        }
+        if (isLooking == null) {
+            return false;
+        }
         if (isLooking instanceof Mob mob){
             itemstack = mob.getItemBySlot(EquipmentSlot.HEAD);
         }
@@ -207,11 +213,19 @@ public class MobUtils {
             return false;
         } else {
             Vec3 vec3 = isLooking.getViewVector(1.0F).normalize();
-            Vec3 vec31 = new Vec3(enderMan.getX() - isLooking.getX(), enderMan.getEyeY() - isLooking.getEyeY(), enderMan.getZ() - isLooking.getZ());
+            Vec3 vec31 = new Vec3(looked.getX() - isLooking.getX(), looked.getEyeY() - isLooking.getEyeY(), looked.getZ() - isLooking.getZ());
             double d0 = vec31.length();
             vec31 = vec31.normalize();
             double d1 = vec3.dot(vec31);
-            return d1 > 1.0D - 0.025D / d0 && isLooking.hasLineOfSight(enderMan);
+            return d1 > 1.0D - 0.025D / d0 && isLooking.hasLineOfSight(looked);
         }
+    }
+
+    public static boolean isDay(Level level) {
+        return !level.dimensionType().hasFixedTime() && MathHelper.getSkyDarkenTime(level) < 4;
+    }
+
+    public static boolean isNight(Level level) {
+        return !level.dimensionType().hasFixedTime() && !isDay(level);
     }
 }

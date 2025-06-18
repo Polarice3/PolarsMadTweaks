@@ -5,7 +5,10 @@
   "minVersion": "0.8",
   "refmap": "polars_mad_tweaks.refmap.json",
   "mixins": [
-    "GlassBlockMixin"
+    "AbstractHurtingProjectileMixin",
+    "AbstractPiglinMixin",
+    "HoglinMixin",
+    "SensorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

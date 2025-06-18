@@ -4,6 +4,7 @@ import com.Polarice3.MadTweaks.MadTweaks;
 import com.Polarice3.MadTweaks.common.capabilities.tweaks.TweaksUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.network.NetworkRegistry;
@@ -38,5 +39,9 @@ public class ModNetwork {
 
     public static <MSG> void sendToALL(MSG msg) {
         ModNetwork.INSTANCE.send(PacketDistributor.ALL.noArg(), msg);
+    }
+
+    public static <MSG> void sentToTrackingEntityAndPlayer(Entity entity, MSG msg) {
+        ModNetwork.INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), msg);
     }
 }

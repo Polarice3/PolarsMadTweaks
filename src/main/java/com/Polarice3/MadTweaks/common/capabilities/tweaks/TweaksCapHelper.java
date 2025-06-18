@@ -52,6 +52,6 @@ public class TweaksCapHelper {
     }
 
     public static void sendTweaksUpdatePacket(LivingEntity livingEntity) {
-        ModNetwork.sendToALL(new TweaksUpdatePacket(livingEntity));
+        ModNetwork.sentToTrackingEntityAndPlayer(livingEntity, new TweaksUpdatePacket(livingEntity));
     }
 }
